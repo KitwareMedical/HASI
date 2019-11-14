@@ -21,7 +21,7 @@ itk::SmartPointer<TImage>
 ReadImage(std::string filename)
 {
   using ReaderType = itk::ImageFileReader<TImage>;
-  ReaderType::Pointer reader = ReaderType::New();
+  typename ReaderType::Pointer reader = ReaderType::New();
   reader->SetFileName(filename);
   reader->Update();
   itk::SmartPointer<TImage> out = reader->GetOutput();
@@ -73,7 +73,7 @@ connectedComponentAnalysis(itk::SmartPointer<TImage> labelImage,
 {
   using ManyLabelImageType = itk::Image<itk::SizeValueType, TImage::ImageDimension>;
   using LabelerType = itk::ConnectedComponentImageFilter<TImage, ManyLabelImageType>;
-  LabelerType::Pointer labeler = LabelerType::New();
+  typename LabelerType::Pointer labeler = LabelerType::New();
   labeler->SetInput(labelImage);
   static unsigned invocationCount = 0;
   WriteImage(labeler->GetOutput(), outFilename + std::to_string(invocationCount) + "-cc-label.nrrd", true);
@@ -123,7 +123,7 @@ sdfErode(itk::SmartPointer<TImage> labelImage, double radius, std::string outFil
   // we need an inversion filter because Maurer's filter distances are not symmetrical
   // inside distances start at 0, while outside distances start at single spacing
   using NotType = itk::NotImageFilter<TImage, TImage>;
-  NotType::Pointer negator = NotType::New();
+  typename NotType::Pointer negator = NotType::New();
   negator->SetInput(labelImage);
   WriteImage(negator->GetOutput(), outFilename + "-erode-Not-label.nrrd", true);
 
@@ -177,11 +177,11 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     using RealImageType = itk::Image<float, ImageType::ImageDimension>;
     using MultiScaleHessianFilterType = itk::MultiScaleHessianEnhancementImageFilter<ImageType, RealImageType>;
     using DescoteauxEigenToScalarImageFilterType =
-      itk::DescoteauxEigenToScalarImageFilter<MultiScaleHessianFilterType::EigenValueImageType, RealImageType>;
-    MultiScaleHessianFilterType::Pointer multiScaleFilter = MultiScaleHessianFilterType::New();
+      itk::DescoteauxEigenToScalarImageFilter<typename MultiScaleHessianFilterType::EigenValueImageType, RealImageType>;
+    typename MultiScaleHessianFilterType::Pointer multiScaleFilter = MultiScaleHessianFilterType::New();
     multiScaleFilter->SetInput(inImage);
     multiScaleFilter->SetSigmaArray(sigmaArray);
-    DescoteauxEigenToScalarImageFilterType::Pointer descoFilter = DescoteauxEigenToScalarImageFilterType::New();
+    typename DescoteauxEigenToScalarImageFilterType::Pointer descoFilter = DescoteauxEigenToScalarImageFilterType::New();
     multiScaleFilter->SetEigenToScalarImageFilter(descoFilter);
 
     WriteImage(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false);
