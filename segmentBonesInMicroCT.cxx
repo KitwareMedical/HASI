@@ -90,7 +90,7 @@ connectedComponentAnalysis(itk::SmartPointer<TImage> labelImage,
   using RelabelType = itk::RelabelComponentImageFilter<ManyLabelImageType, TImage>;
   typename RelabelType::Pointer relabeler = RelabelType::New();
   relabeler->SetInput(labeler->GetOutput());
-  relabeler->SetMinimumObjectSize(100);
+  relabeler->SetMinimumObjectSize(1000);
   UpdateAndWrite(
     relabeler->GetOutput(), outFilename + std::to_string(invocationCount) + "-ccR-label.nrrd", true, debugLevel);
   ++invocationCount;
