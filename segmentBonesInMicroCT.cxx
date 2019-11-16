@@ -290,7 +290,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   }
   UpdateAndWrite(trabecularBones, outFilename + "-trabecular-label.nrrd", true, 1);
 
-  const double maxRadius = 6.0 * corticalBoneThickness;
+  const double maxRadius = 8.0 * corticalBoneThickness; // allow some room for imperfect intermediate steps
   double       avgSpacing = 1.0;
   IndexType    opSize; // maximum extent of morphological operations
   for (unsigned d = 0; d < Dimension; d++)
