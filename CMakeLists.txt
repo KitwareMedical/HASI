@@ -18,6 +18,8 @@ find_package(ITK 5 REQUIRED
     ITKThresholding
     ITKConnectedComponents
     ITKDistanceMap
+    ITKRegionGrowing
+    ITKImageGrid
     BoneEnhancement
     ITKIOMeta
     ITKIONRRD
