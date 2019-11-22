@@ -12,7 +12,8 @@
 #include "itkNotImageFilter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 #include "itkMultiScaleHessianEnhancementImageFilter.h"
-#include "itkDescoteauxEigenToScalarImageFilter.h"
+#include "itkDescoteauxEigenToMeasureImageFilter.h"
+#include "itkDescoteauxEigenToMeasureParameterEstimationFilter.h"
 #include "itkNeighborhoodConnectedImageFilter.h"
 //#include "itkRegionOfInterestImageFilter.h"
 
@@ -180,20 +181,22 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     gaussLabel = binTh2->GetOutput();
   }
 
-  // TODO: improve MultiScaleHessianEnhancementImageFilter to allow streaming
-  // because this filter uses a lot of memory
   typename LabelImageType::Pointer cortexLabel;
   {
-    using RealImageType = itk::Image<float, Dimension>;
     using MultiScaleHessianFilterType = itk::MultiScaleHessianEnhancementImageFilter<ImageType, RealImageType>;
+    using EigenValueImageType = typename MultiScaleHessianFilterType::EigenValueImageType;
     using DescoteauxEigenToScalarImageFilterType =
-      itk::DescoteauxEigenToScalarImageFilter<typename MultiScaleHessianFilterType::EigenValueImageType, RealImageType>;
+      itk::DescoteauxEigenToMeasureImageFilter<EigenValueImageType, RealImageType>;
+    using DescoteauxMeasureEstimationType = itk::DescoteauxEigenToMeasureParameterEstimationFilter<EigenValueImageType>;
+
     typename MultiScaleHessianFilterType::Pointer multiScaleFilter = MultiScaleHessianFilterType::New();
     multiScaleFilter->SetInput(inImage);
     multiScaleFilter->SetSigmaArray(sigmaArray);
     typename DescoteauxEigenToScalarImageFilterType::Pointer descoFilter =
       DescoteauxEigenToScalarImageFilterType::New();
-    multiScaleFilter->SetEigenToScalarImageFilter(descoFilter);
+    multiScaleFilter->SetEigenToMeasureImageFilter(descoFilter);
+    typename DescoteauxMeasureEstimationType::Pointer descoEstimator = DescoteauxMeasureEstimationType::New();
+    multiScaleFilter->SetEigenToMeasureParameterEstimationFilter(descoEstimator);
 
     UpdateAndWrite(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false, 1);
 
@@ -226,8 +229,8 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       {
         unsigned char p = cIt.Get() || gIt.Get();
         p = p && tIt.Get();
-        cIt.Set(p);
-      }
+          cIt.Set(p);
+        }
     },
     nullptr);
   UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 1);
