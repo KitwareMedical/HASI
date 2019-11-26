@@ -221,7 +221,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   RegionType wholeImage = inImage->GetLargestPossibleRegion();
   mt->ParallelizeImageRegion<Dimension>(
     wholeImage,
-    [cortexLabel, gaussLabel, thLabel](RegionType region) {
+    [cortexLabel, gaussLabel, thLabel](const RegionType region) {
       itk::ImageRegionConstIterator<LabelImageType> gIt(gaussLabel, region);
       itk::ImageRegionConstIterator<LabelImageType> tIt(thLabel, region);
       itk::ImageRegionIterator<LabelImageType>      cIt(cortexLabel, region);
@@ -331,7 +331,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     thisBone->Allocate(true);
     mt->ParallelizeImageRegion<Dimension>(
       boneRegion,
-      [thisBone, bones, bone](RegionType region) {
+      [thisBone, bones, bone](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> bIt(bones, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(thisBone, region);
         for (; !oIt.IsAtEnd(); ++bIt, ++oIt)
@@ -354,7 +354,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     partialInput->FillBuffer(background);
     mt->ParallelizeImageRegion<Dimension>(
       boneRegion,
-      [partialInput, inImage, thisDist, boneDist, background, epsDist](RegionType region) {
+      [partialInput, inImage, thisDist, boneDist, background, epsDist](const RegionType region) {
         itk::ImageRegionConstIterator<RealImageType> tIt(thisDist, region);
         itk::ImageRegionConstIterator<RealImageType> gIt(boneDist, region);
         itk::ImageRegionConstIterator<ImageType>     iIt(inImage, region);
@@ -394,7 +394,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     // now do the same for marrow, seeding from cortical and trabecular bone
     mt->ParallelizeImageRegion<Dimension>(
       boneRegion,
-      [thBone, erodedBone](RegionType region) {
+      [thBone, erodedBone](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> bIt(erodedBone, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(thBone, region);
         for (; !oIt.IsAtEnd(); ++bIt, ++oIt)
@@ -411,7 +411,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     // now combine them, clipping them to the bone mask implied by partialInput
     mt->ParallelizeImageRegion<Dimension>(
       safeBoneRegion,
-      [finalBones, erodedMarrow, dilatedBone, cortexLabel, partialInput, bone, background](RegionType region) {
+      [finalBones, erodedMarrow, dilatedBone, cortexLabel, partialInput, bone, background](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> mIt(erodedMarrow, region);
         itk::ImageRegionConstIterator<LabelImageType> bIt(dilatedBone, region);
         itk::ImageRegionConstIterator<LabelImageType> cIt(cortexLabel, region);
