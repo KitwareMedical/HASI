@@ -238,13 +238,13 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     typename DescoteauxMeasureEstimationType::Pointer descoEstimator = DescoteauxMeasureEstimationType::New();
     multiScaleFilter->SetEigenToMeasureParameterEstimationFilter(descoEstimator);
 
-    UpdateAndWrite(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false, 1);
+    UpdateAndWrite(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false, 2);
 
     using FloatThresholdType = itk::BinaryThresholdImageFilter<RealImageType, LabelImageType>;
     typename FloatThresholdType::Pointer descoTh = FloatThresholdType::New();
     descoTh->SetInput(multiScaleFilter->GetOutput());
     descoTh->SetLowerThreshold(0.1);
-    UpdateAndWrite(descoTh->GetOutput(), outFilename + "-desco-label.nrrd", true, 1);
+    UpdateAndWrite(descoTh->GetOutput(), outFilename + "-desco-label.nrrd", true, 2);
     descoLabel = descoTh->GetOutput();
   }
 
@@ -278,7 +278,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       }
     },
     nullptr);
-  UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 1);
+  UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 2);
   typename LabelImageType::Pointer cortexEroded =
     sdfErode(cortexLabel, 0.5 * corticalBoneThickness, outFilename + "-cortex-eroded", 2);
 
@@ -295,7 +295,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   // we need 3 labels per bone, one each for cortical, trabecular and marrow
   itkAssertOrThrowMacro(numBones <= 85, "There are too many bones to fit into uchar");
 
-  bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 2);
+  bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 1);
   typename RealImageType::Pointer boneDist = sdf(bones, outFilename + "-bones-dist.nrrd", 3);
 
   std::vector<IndexType> minIndices(numBones + 1, IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::max()));
@@ -402,7 +402,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
         }
       },
       nullptr);
-    UpdateAndWrite(partialInput, boneFilename + "-partial-input.nrrd", true, 2);
+    UpdateAndWrite(partialInput, boneFilename + ".nrrd", true, 1);
 
     using ConnectedFilterType = itk::NeighborhoodConnectedImageFilter<ImageType, LabelImageType>;
     typename ConnectedFilterType::Pointer neighborhoodConnected = ConnectedFilterType::New();
@@ -519,7 +519,7 @@ main(int argc, char * argv[])
     using MedianType = itk::MedianImageFilter<InputImageType, InputImageType>;
     MedianType::Pointer median = MedianType::New();
     median->SetInput(image);
-    UpdateAndWrite(median->GetOutput(), outputFileName + "-median.nrrd", false, 1);
+    UpdateAndWrite(median->GetOutput(), outputFileName + "-median.nrrd", false, 2);
     image = median->GetOutput();
     image->DisconnectPipeline();
 
