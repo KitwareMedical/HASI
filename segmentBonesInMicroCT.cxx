@@ -251,7 +251,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
 
   typename BinaryThresholdType::Pointer binTh = BinaryThresholdType::New();
   binTh->SetInput(inImage);
-  binTh->SetLowerThreshold(2500); // start from a high threshold, so bones are well separated
+  binTh->SetLowerThreshold(5000); // start from a high threshold, so bones are well separated
   UpdateAndWrite(binTh->GetOutput(), outFilename + "-bin1-label.nrrd", true, 2);
   typename LabelImageType::Pointer thLabel = binTh->GetOutput();
 
