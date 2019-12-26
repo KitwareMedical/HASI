@@ -16,6 +16,7 @@
 #include "itkDescoteauxEigenToMeasureParameterEstimationFilter.h"
 #include "itkNeighborhoodConnectedImageFilter.h"
 #include "itkConstantPadImageFilter.h"
+#include "itkBinaryFillholeImageFilter.h"
 
 
 auto     startTime = std::chrono::steady_clock::now();
@@ -379,6 +380,34 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       nullptr);
     typename RealImageType::Pointer thisDist = sdf(thisBone, boneFilename + "-dist.nrrd", 2);
 
+    typename LabelImageType::Pointer boneBasin = LabelImageType::New();
+    boneBasin->CopyInformation(inImage);
+    boneBasin->SetRegions(safeBoneRegion);
+    boneBasin->Allocate(true);
+    mt->ParallelizeImageRegion<Dimension>(
+      boneRegion,
+      [boneBasin, thisDist, boneDist, epsDist](const RegionType region) {
+        itk::ImageRegionConstIterator<RealImageType> tIt(thisDist, region);
+        itk::ImageRegionConstIterator<RealImageType> gIt(boneDist, region);
+        itk::ImageRegionIterator<LabelImageType>     oIt(boneBasin, region);
+        for (; !oIt.IsAtEnd(); ++tIt, ++gIt, ++oIt)
+        {
+          if (std::abs(tIt.Get() - gIt.Get()) < epsDist)
+          {
+            oIt.Set(1);
+          }
+        }
+      },
+      nullptr);
+
+    using FillHolesType = itk::BinaryFillholeImageFilter<LabelImageType>;
+    typename FillHolesType::Pointer fillHoles = FillHolesType::New();
+    fillHoles->SetInput(boneBasin);
+    fillHoles->SetForegroundValue(1);
+    UpdateAndWrite(fillHoles->GetOutput(), boneFilename + "-basin-label.nrrd", true, 2);
+    boneBasin = fillHoles->GetOutput();
+    boneBasin->DisconnectPipeline();
+
     constexpr typename ImageType::PixelType background = -4096;
 
     typename ImageType::Pointer partialInput = ImageType::New();
@@ -388,14 +417,13 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     partialInput->FillBuffer(background);
     mt->ParallelizeImageRegion<Dimension>(
       boneRegion,
-      [partialInput, inImage, thisDist, boneDist, background, epsDist](const RegionType region) {
-        itk::ImageRegionConstIterator<RealImageType> tIt(thisDist, region);
-        itk::ImageRegionConstIterator<RealImageType> gIt(boneDist, region);
+      [partialInput, inImage, boneBasin](const RegionType region) {
+        itk::ImageRegionConstIterator<LabelImageType> tIt(boneBasin, region);
         itk::ImageRegionConstIterator<ImageType>     iIt(inImage, region);
         itk::ImageRegionIterator<ImageType>          oIt(partialInput, region);
-        for (; !oIt.IsAtEnd(); ++iIt, ++tIt, ++gIt, ++oIt)
+        for (; !oIt.IsAtEnd(); ++iIt, ++tIt, ++oIt)
         {
-          if (std::abs(tIt.Get() - gIt.Get()) < epsDist)
+          if (tIt.Get())
           {
             oIt.Set(iIt.Get());
           }
@@ -443,18 +471,18 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     typename LabelImageType::Pointer erodedMarrow =
       sdfErode(dilatedMarrow, 6.0 * corticalBoneThickness, boneFilename + "-marrow", 3);
 
-    // now combine them, clipping them to the bone mask implied by partialInput
+    // now combine them, clipping them to the boneBasin
     mt->ParallelizeImageRegion<Dimension>(
       safeBoneRegion,
-      [finalBones, erodedMarrow, dilatedBone, cortexLabel, partialInput, bone, background](const RegionType region) {
+      [finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, background](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> mIt(erodedMarrow, region);
         itk::ImageRegionConstIterator<LabelImageType> bIt(dilatedBone, region);
         itk::ImageRegionConstIterator<LabelImageType> cIt(cortexLabel, region);
-        itk::ImageRegionConstIterator<ImageType>      iIt(partialInput, region);
+        itk::ImageRegionConstIterator<LabelImageType> iIt(boneBasin, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(finalBones, region);
         for (; !oIt.IsAtEnd(); ++mIt, ++bIt, ++cIt, ++iIt, ++oIt)
         {
-          if (iIt.Get() > background)
+          if (iIt.Get())
           {
             if (cIt.Get())
             {
