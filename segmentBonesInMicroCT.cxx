@@ -305,6 +305,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   std::vector<IndexType> minIndices(numBones + 1, IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::max()));
   std::vector<IndexType> maxIndices(numBones + 1,
                                     IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::NonpositiveMin()));
+  std::vector<unsigned char> replacedBy(numBones + 1, 0);
   {
     itk::ImageRegionConstIteratorWithIndex<LabelImageType> bIt(bones, wholeImage);
     itk::ImageRegionConstIterator<LabelImageType>          cIt(cortexEroded, wholeImage);
@@ -334,6 +335,12 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   // per-bone processing
   for (unsigned bone = 1; bone <= numBones; bone++)
   {
+    if (replacedBy[bone] > 0)
+    {
+      std::cout << "Bone " << bone << " was an island inside bone " << unsigned(replacedBy[bone]) << std::endl;
+      continue; // next bone
+    }
+
     std::string boneFilename = outFilename + "-bone" + std::to_string(bone);
 
     // calculate expanded bounding box, so the subsequent operations don't need to process the whole image
@@ -429,12 +436,24 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     typename ConnectedFilterType::Pointer neighborhoodConnected = ConnectedFilterType::New();
     neighborhoodConnected->SetInput(partialInput);
     neighborhoodConnected->SetLower(1500); // use a lower threshold here, so we capture more of trabecular bone
-    itk::ImageRegionConstIteratorWithIndex<LabelImageType> tIt(bones, boneRegion);
-    for (; !tIt.IsAtEnd(); ++tIt)
+    itk::ImageRegionConstIteratorWithIndex<LabelImageType> bIt(bones, boneRegion);
+    itk::ImageRegionConstIterator<LabelImageType>          bbIt(boneBasin, boneRegion);
+    for (; !bIt.IsAtEnd(); ++bIt, ++bbIt)
     {
-      if (tIt.Get() == bone)
+      unsigned char b = bIt.Get();
+      if (b > 0)
       {
-        neighborhoodConnected->AddSeed(tIt.GetIndex());
+        if (b == bone)
+        {
+          neighborhoodConnected->AddSeed(bIt.GetIndex());
+        }
+        else // b != bone
+        {
+          if (bbIt.Get()) // this was a hole inside this bone basin
+          {
+            replacedBy[b] = bone; // mark it for skipping
+          }
+        }
       }
     }
     UpdateAndWrite(neighborhoodConnected->GetOutput(), boneFilename + "-trabecularSmall-label.nrrd", true, 3);
