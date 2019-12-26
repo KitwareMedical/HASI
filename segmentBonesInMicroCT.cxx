@@ -282,6 +282,8 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 2);
   typename LabelImageType::Pointer cortexEroded =
     sdfErode(cortexLabel, 0.5 * corticalBoneThickness, outFilename + "-cortex-eroded", 2);
+  descoLabel = nullptr; // deallocate it
+  gaussLabel = nullptr; // deallocate it
 
   typename LabelImageType::Pointer finalBones = LabelImageType::New();
   finalBones->CopyInformation(inImage);
@@ -299,30 +301,20 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 1);
   typename RealImageType::Pointer boneDist = sdf(bones, outFilename + "-bones-dist.nrrd", 3);
 
+  // calculate bounding box for each bone
   std::vector<IndexType> minIndices(numBones + 1, IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::max()));
   std::vector<IndexType> maxIndices(numBones + 1,
                                     IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::NonpositiveMin()));
-
-  typename LabelImageType::Pointer trabecularBones = LabelImageType::New();
-  trabecularBones->CopyInformation(inImage);
-  trabecularBones->SetRegions(paddedWholeImage);
-  trabecularBones->Allocate(true);
   {
-    itk::ImageRegionConstIterator<LabelImageType>     bIt(bones, wholeImage);
-    itk::ImageRegionConstIterator<LabelImageType>     cIt(cortexEroded, wholeImage);
-    itk::ImageRegionIteratorWithIndex<LabelImageType> tIt(trabecularBones, wholeImage);
-    for (; !tIt.IsAtEnd(); ++tIt, ++bIt, ++cIt)
+    itk::ImageRegionConstIteratorWithIndex<LabelImageType> bIt(bones, wholeImage);
+    itk::ImageRegionConstIterator<LabelImageType>          cIt(cortexEroded, wholeImage);
+    for (; !bIt.IsAtEnd(); ++bIt, ++cIt)
     {
       unsigned char bone = bIt.Get();
       if (bone > 0)
       {
-        if (cIt.Get() == 0)
-        {
-          tIt.Set(bone);
-        }
-
         // for determining bone's bounding box
-        IndexType ind = tIt.GetIndex();
+        IndexType ind = bIt.GetIndex();
         for (unsigned d = 0; d < Dimension; d++)
         {
           if (ind[d] < minIndices[bone][d])
@@ -337,7 +329,6 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       }
     }
   }
-  UpdateAndWrite(trabecularBones, outFilename + "-trabecular-label.nrrd", true, 2);
 
 
   // per-bone processing
@@ -379,6 +370,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       },
       nullptr);
     typename RealImageType::Pointer thisDist = sdf(thisBone, boneFilename + "-dist.nrrd", 2);
+    thisBone = nullptr; // deallocate it
 
     typename LabelImageType::Pointer boneBasin = LabelImageType::New();
     boneBasin->CopyInformation(inImage);
@@ -399,6 +391,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
         }
       },
       nullptr);
+    thisDist = nullptr; // deallocate it
 
     using FillHolesType = itk::BinaryFillholeImageFilter<LabelImageType>;
     typename FillHolesType::Pointer fillHoles = FillHolesType::New();
@@ -419,8 +412,8 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       boneRegion,
       [partialInput, inImage, boneBasin](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> tIt(boneBasin, region);
-        itk::ImageRegionConstIterator<ImageType>     iIt(inImage, region);
-        itk::ImageRegionIterator<ImageType>          oIt(partialInput, region);
+        itk::ImageRegionConstIterator<ImageType>      iIt(inImage, region);
+        itk::ImageRegionIterator<ImageType>           oIt(partialInput, region);
         for (; !oIt.IsAtEnd(); ++iIt, ++tIt, ++oIt)
         {
           if (tIt.Get())
@@ -446,6 +439,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     }
     UpdateAndWrite(neighborhoodConnected->GetOutput(), boneFilename + "-trabecularSmall-label.nrrd", true, 3);
     typename LabelImageType::Pointer thBone = neighborhoodConnected->GetOutput();
+    partialInput = nullptr; // deallocate it
 
     thBone = zeroPad(thBone, opSize, boneFilename + "-trabecularPadded-label.nrrd", 2);
     typename LabelImageType::Pointer dilatedBone =
@@ -466,10 +460,13 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
         }
       },
       nullptr);
+    erodedBone = nullptr; // deallocate it
     typename LabelImageType::Pointer dilatedMarrow =
       sdfDilate(thBone, 5.0 * corticalBoneThickness, boneFilename + "-marrow", 3);
+    thBone = nullptr; // deallocate it
     typename LabelImageType::Pointer erodedMarrow =
       sdfErode(dilatedMarrow, 6.0 * corticalBoneThickness, boneFilename + "-marrow", 3);
+    dilatedMarrow = nullptr; // deallocate it
 
     // now combine them, clipping them to the boneBasin
     mt->ParallelizeImageRegion<Dimension>(
