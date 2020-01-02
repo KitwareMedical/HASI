@@ -16,6 +16,7 @@
 #include "itkDescoteauxEigenToMeasureParameterEstimationFilter.h"
 #include "itkNeighborhoodConnectedImageFilter.h"
 #include "itkConstantPadImageFilter.h"
+#include "itkBinaryFillholeImageFilter.h"
 
 
 auto     startTime = std::chrono::steady_clock::now();
@@ -238,20 +239,20 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     typename DescoteauxMeasureEstimationType::Pointer descoEstimator = DescoteauxMeasureEstimationType::New();
     multiScaleFilter->SetEigenToMeasureParameterEstimationFilter(descoEstimator);
 
-    UpdateAndWrite(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false, 1);
+    UpdateAndWrite(multiScaleFilter->GetOutput(), outFilename + "-desco.nrrd", false, 2);
 
     using FloatThresholdType = itk::BinaryThresholdImageFilter<RealImageType, LabelImageType>;
     typename FloatThresholdType::Pointer descoTh = FloatThresholdType::New();
     descoTh->SetInput(multiScaleFilter->GetOutput());
     descoTh->SetLowerThreshold(0.1);
-    UpdateAndWrite(descoTh->GetOutput(), outFilename + "-desco-label.nrrd", true, 1);
+    UpdateAndWrite(descoTh->GetOutput(), outFilename + "-desco-label.nrrd", true, 2);
     descoLabel = descoTh->GetOutput();
   }
 
 
   typename BinaryThresholdType::Pointer binTh = BinaryThresholdType::New();
   binTh->SetInput(inImage);
-  binTh->SetLowerThreshold(2500); // start from a high threshold, so bones are well separated
+  binTh->SetLowerThreshold(5000); // start from a high threshold, so bones are well separated
   UpdateAndWrite(binTh->GetOutput(), outFilename + "-bin1-label.nrrd", true, 2);
   typename LabelImageType::Pointer thLabel = binTh->GetOutput();
 
@@ -278,9 +279,11 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       }
     },
     nullptr);
-  UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 1);
+  UpdateAndWrite(cortexLabel, outFilename + "-cortex-label.nrrd", true, 2);
   typename LabelImageType::Pointer cortexEroded =
     sdfErode(cortexLabel, 0.5 * corticalBoneThickness, outFilename + "-cortex-eroded", 2);
+  descoLabel = nullptr; // deallocate it
+  gaussLabel = nullptr; // deallocate it
 
   typename LabelImageType::Pointer finalBones = LabelImageType::New();
   finalBones->CopyInformation(inImage);
@@ -295,33 +298,24 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   // we need 3 labels per bone, one each for cortical, trabecular and marrow
   itkAssertOrThrowMacro(numBones <= 85, "There are too many bones to fit into uchar");
 
-  bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 2);
+  bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 1);
   typename RealImageType::Pointer boneDist = sdf(bones, outFilename + "-bones-dist.nrrd", 3);
 
+  // calculate bounding box for each bone
   std::vector<IndexType> minIndices(numBones + 1, IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::max()));
   std::vector<IndexType> maxIndices(numBones + 1,
                                     IndexType::Filled(itk::NumericTraits<itk::IndexValueType>::NonpositiveMin()));
-
-  typename LabelImageType::Pointer trabecularBones = LabelImageType::New();
-  trabecularBones->CopyInformation(inImage);
-  trabecularBones->SetRegions(paddedWholeImage);
-  trabecularBones->Allocate(true);
+  std::vector<unsigned char> replacedBy(numBones + 1, 0);
   {
-    itk::ImageRegionConstIterator<LabelImageType>     bIt(bones, wholeImage);
-    itk::ImageRegionConstIterator<LabelImageType>     cIt(cortexEroded, wholeImage);
-    itk::ImageRegionIteratorWithIndex<LabelImageType> tIt(trabecularBones, wholeImage);
-    for (; !tIt.IsAtEnd(); ++tIt, ++bIt, ++cIt)
+    itk::ImageRegionConstIteratorWithIndex<LabelImageType> bIt(bones, wholeImage);
+    itk::ImageRegionConstIterator<LabelImageType>          cIt(cortexEroded, wholeImage);
+    for (; !bIt.IsAtEnd(); ++bIt, ++cIt)
     {
       unsigned char bone = bIt.Get();
       if (bone > 0)
       {
-        if (cIt.Get() == 0)
-        {
-          tIt.Set(bone);
-        }
-
         // for determining bone's bounding box
-        IndexType ind = tIt.GetIndex();
+        IndexType ind = bIt.GetIndex();
         for (unsigned d = 0; d < Dimension; d++)
         {
           if (ind[d] < minIndices[bone][d])
@@ -336,12 +330,17 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       }
     }
   }
-  UpdateAndWrite(trabecularBones, outFilename + "-trabecular-label.nrrd", true, 2);
 
 
   // per-bone processing
   for (unsigned bone = 1; bone <= numBones; bone++)
   {
+    if (replacedBy[bone] > 0)
+    {
+      std::cout << "Bone " << bone << " was an island inside bone " << unsigned(replacedBy[bone]) << std::endl;
+      continue; // next bone
+    }
+
     std::string boneFilename = outFilename + "-bone" + std::to_string(bone);
 
     // calculate expanded bounding box, so the subsequent operations don't need to process the whole image
@@ -378,6 +377,36 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
       },
       nullptr);
     typename RealImageType::Pointer thisDist = sdf(thisBone, boneFilename + "-dist.nrrd", 2);
+    thisBone = nullptr; // deallocate it
+
+    typename LabelImageType::Pointer boneBasin = LabelImageType::New();
+    boneBasin->CopyInformation(inImage);
+    boneBasin->SetRegions(safeBoneRegion);
+    boneBasin->Allocate(true);
+    mt->ParallelizeImageRegion<Dimension>(
+      boneRegion,
+      [boneBasin, thisDist, boneDist, epsDist](const RegionType region) {
+        itk::ImageRegionConstIterator<RealImageType> tIt(thisDist, region);
+        itk::ImageRegionConstIterator<RealImageType> gIt(boneDist, region);
+        itk::ImageRegionIterator<LabelImageType>     oIt(boneBasin, region);
+        for (; !oIt.IsAtEnd(); ++tIt, ++gIt, ++oIt)
+        {
+          if (std::abs(tIt.Get() - gIt.Get()) < epsDist)
+          {
+            oIt.Set(1);
+          }
+        }
+      },
+      nullptr);
+    thisDist = nullptr; // deallocate it
+
+    using FillHolesType = itk::BinaryFillholeImageFilter<LabelImageType>;
+    typename FillHolesType::Pointer fillHoles = FillHolesType::New();
+    fillHoles->SetInput(boneBasin);
+    fillHoles->SetForegroundValue(1);
+    UpdateAndWrite(fillHoles->GetOutput(), boneFilename + "-basin-label.nrrd", true, 2);
+    boneBasin = fillHoles->GetOutput();
+    boneBasin->DisconnectPipeline();
 
     constexpr typename ImageType::PixelType background = -4096;
 
@@ -388,36 +417,48 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     partialInput->FillBuffer(background);
     mt->ParallelizeImageRegion<Dimension>(
       boneRegion,
-      [partialInput, inImage, thisDist, boneDist, background, epsDist](const RegionType region) {
-        itk::ImageRegionConstIterator<RealImageType> tIt(thisDist, region);
-        itk::ImageRegionConstIterator<RealImageType> gIt(boneDist, region);
-        itk::ImageRegionConstIterator<ImageType>     iIt(inImage, region);
-        itk::ImageRegionIterator<ImageType>          oIt(partialInput, region);
-        for (; !oIt.IsAtEnd(); ++iIt, ++tIt, ++gIt, ++oIt)
+      [partialInput, inImage, boneBasin](const RegionType region) {
+        itk::ImageRegionConstIterator<LabelImageType> tIt(boneBasin, region);
+        itk::ImageRegionConstIterator<ImageType>      iIt(inImage, region);
+        itk::ImageRegionIterator<ImageType>           oIt(partialInput, region);
+        for (; !oIt.IsAtEnd(); ++iIt, ++tIt, ++oIt)
         {
-          if (std::abs(tIt.Get() - gIt.Get()) < epsDist)
+          if (tIt.Get())
           {
             oIt.Set(iIt.Get());
           }
         }
       },
       nullptr);
-    UpdateAndWrite(partialInput, boneFilename + "-partial-input.nrrd", true, 2);
+    UpdateAndWrite(partialInput, boneFilename + ".nrrd", true, 1);
 
     using ConnectedFilterType = itk::NeighborhoodConnectedImageFilter<ImageType, LabelImageType>;
     typename ConnectedFilterType::Pointer neighborhoodConnected = ConnectedFilterType::New();
     neighborhoodConnected->SetInput(partialInput);
     neighborhoodConnected->SetLower(1500); // use a lower threshold here, so we capture more of trabecular bone
-    itk::ImageRegionConstIteratorWithIndex<LabelImageType> tIt(bones, boneRegion);
-    for (; !tIt.IsAtEnd(); ++tIt)
+    itk::ImageRegionConstIteratorWithIndex<LabelImageType> bIt(bones, boneRegion);
+    itk::ImageRegionConstIterator<LabelImageType>          bbIt(boneBasin, boneRegion);
+    for (; !bIt.IsAtEnd(); ++bIt, ++bbIt)
     {
-      if (tIt.Get() == bone)
+      unsigned char b = bIt.Get();
+      if (b > 0)
       {
-        neighborhoodConnected->AddSeed(tIt.GetIndex());
+        if (b == bone)
+        {
+          neighborhoodConnected->AddSeed(bIt.GetIndex());
+        }
+        else // b != bone
+        {
+          if (bbIt.Get()) // this was a hole inside this bone basin
+          {
+            replacedBy[b] = bone; // mark it for skipping
+          }
+        }
       }
     }
     UpdateAndWrite(neighborhoodConnected->GetOutput(), boneFilename + "-trabecularSmall-label.nrrd", true, 3);
     typename LabelImageType::Pointer thBone = neighborhoodConnected->GetOutput();
+    partialInput = nullptr; // deallocate it
 
     thBone = zeroPad(thBone, opSize, boneFilename + "-trabecularPadded-label.nrrd", 2);
     typename LabelImageType::Pointer dilatedBone =
@@ -438,23 +479,26 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
         }
       },
       nullptr);
+    erodedBone = nullptr; // deallocate it
     typename LabelImageType::Pointer dilatedMarrow =
       sdfDilate(thBone, 5.0 * corticalBoneThickness, boneFilename + "-marrow", 3);
+    thBone = nullptr; // deallocate it
     typename LabelImageType::Pointer erodedMarrow =
       sdfErode(dilatedMarrow, 6.0 * corticalBoneThickness, boneFilename + "-marrow", 3);
+    dilatedMarrow = nullptr; // deallocate it
 
-    // now combine them, clipping them to the bone mask implied by partialInput
+    // now combine them, clipping them to the boneBasin
     mt->ParallelizeImageRegion<Dimension>(
       safeBoneRegion,
-      [finalBones, erodedMarrow, dilatedBone, cortexLabel, partialInput, bone, background](const RegionType region) {
+      [finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, background](const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> mIt(erodedMarrow, region);
         itk::ImageRegionConstIterator<LabelImageType> bIt(dilatedBone, region);
         itk::ImageRegionConstIterator<LabelImageType> cIt(cortexLabel, region);
-        itk::ImageRegionConstIterator<ImageType>      iIt(partialInput, region);
+        itk::ImageRegionConstIterator<LabelImageType> iIt(boneBasin, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(finalBones, region);
         for (; !oIt.IsAtEnd(); ++mIt, ++bIt, ++cIt, ++iIt, ++oIt)
         {
-          if (iIt.Get() > background)
+          if (iIt.Get())
           {
             if (cIt.Get())
             {
@@ -519,7 +563,7 @@ main(int argc, char * argv[])
     using MedianType = itk::MedianImageFilter<InputImageType, InputImageType>;
     MedianType::Pointer median = MedianType::New();
     median->SetInput(image);
-    UpdateAndWrite(median->GetOutput(), outputFileName + "-median.nrrd", false, 1);
+    UpdateAndWrite(median->GetOutput(), outputFileName + "-median.nrrd", false, 2);
     image = median->GetOutput();
     image->DisconnectPipeline();
 
