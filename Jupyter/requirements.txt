@@ -1,6 +1,5 @@
-jupyterlab
-matplotlib
-numpy
-ipywidgets
-itkwidgets
+jupyterlab>=2.0.1
+ipywidgets=7.5.1
+itkwidgets>=0.26.1
 itk-elastix
+
