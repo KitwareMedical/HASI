@@ -1,5 +1,4 @@
 jupyterlab>=2.0.1
-ipywidgets=7.5.1
+ipywidgets==7.5.1
 itkwidgets>=0.26.1
-itk-elastix
-
+itk-elastix>=0.5.1
