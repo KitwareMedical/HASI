@@ -23,6 +23,7 @@ find_package(ITK 5 REQUIRED
     ITKLabelMap
     ITKRegistrationCommon
     ITKIOTransformInsightLegacy
+    ITKIOTransformHDF5
     ITKSpatialObjects
     BoneEnhancement
     ITKIOMeta
