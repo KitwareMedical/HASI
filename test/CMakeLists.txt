@@ -7,20 +7,21 @@ set(HASITests
 
 CreateTestDriver(HASI "${HASI-Test_LIBRARIES}" "${HASITests}")
 
+itk_add_test(NAME itkSegment901LTest
+  COMMAND HASITestDriver
+    --compare
+    DATA{Baseline/901-L-label.nrrd}
+    ${ITK_TEST_OUTPUT_DIR}/901-L-label.nrrd
+  itkSegmentBonesInMicroCTFilterTest
+    DATA{Input/901-L.nrrd}
+    ${ITK_TEST_OUTPUT_DIR}/901-L-label.nrrd
+  )
+
 itk_add_test(NAME itkLandmarkAtlasSegmentationFilterTest
   COMMAND HASITestDriver
     --compare
-    ${ITK_TEST_OUTPUT_DIR}/itkLandmarkAtlasSegmentationFilterTestOutput.mha
     DATA{Baseline/itkLandmarkAtlasSegmentationFilterTestOutput.mha}
+    ${ITK_TEST_OUTPUT_DIR}/itkLandmarkAtlasSegmentationFilterTestOutput.mha
   itkLandmarkAtlasSegmentationFilterTest
     ${ITK_TEST_OUTPUT_DIR}/itkLandmarkAtlasSegmentationFilterTestOutput.mha
-  )
-
-itk_add_test(NAME itkSegmentBonesInMicroCTFilterTest
-  COMMAND HASITestDriver
-    --compare
-    ${ITK_TEST_OUTPUT_DIR}/itkSegmentBonesInMicroCTFilterTestOutput.mha
-    DATA{Baseline/itkSegmentBonesInMicroCTFilterTestOutput.mha}
-  itkSegmentBonesInMicroCTFilterTest
-    ${ITK_TEST_OUTPUT_DIR}/itkSegmentBonesInMicroCTFilterTestOutput.mha
   )

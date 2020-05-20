@@ -19,28 +19,30 @@
 #define itkSegmentBonesInMicroCTFilter_h
 
 #include "itkImageToImageFilter.h"
+#include "itkBinaryThresholdImageFilter.h"
+
 
 namespace itk
 {
 
 /** \class SegmentBonesInMicroCTFilter
  *
- * \brief Filters a image by iterating over its pixels.
+ * \brief Segments bones in microCT image. Developed for mouse knees.
  *
- * Filters a image by iterating over its pixels in a multi-threaded way
- * and {to be completed by the developer}.
+ * Each bone consistes of 3 labels:
+ * 3n - cortical bone
+ * 3n+1 - trabecular bone
+ * 3n+2 - bone marrow
+ *
+ * Breakdown of each bone into these sub-regions is usually not overly accurate.
  *
  * \ingroup HASI
- *
  */
 template <typename TInputImage, typename TOutputImage>
 class SegmentBonesInMicroCTFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
   ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBonesInMicroCTFilter);
-
-  static constexpr unsigned int InputImageDimension = TInputImage::ImageDimension;
-  static constexpr unsigned int OutputImageDimension = TOutputImage::ImageDimension;
 
   using InputImageType = TInputImage;
   using OutputImageType = TInputImage;
@@ -59,20 +61,55 @@ public:
   /** Standard New macro. */
   itkNewMacro(Self);
 
+  /** Approximate expected thickness of cortical bone
+   * expressed in units of image spacing (usually millimeters). */
+  itkGetConstMacro(CorticalBoneThickness, float);
+  itkSetMacro(CorticalBoneThickness, float);
+
 protected:
   SegmentBonesInMicroCTFilter();
   ~SegmentBonesInMicroCTFilter() override = default;
 
-  void PrintSelf(std::ostream & os, Indent indent) const override;
+  void
+  PrintSelf(std::ostream & os, Indent indent) const override;
 
-  using OutputRegionType = typename OutputImageType::RegionType;
+  static constexpr unsigned int Dimension = TInputImage::ImageDimension;
+  using RealImageType = Image<float, Dimension>;
+  using RegionType = typename TOutputImage::RegionType;
+  using IndexType = typename TOutputImage::IndexType;
+  using SizeType = typename TOutputImage::SizeType;
+  using FloatThresholdType = BinaryThresholdImageFilter<RealImageType, TOutputImage>;
 
-  void GenerateData() override;
+  // split the binary mask into components and remove the small islands
+  typename TOutputImage::Pointer
+  ConnectedComponentAnalysis(typename TOutputImage::Pointer labelImage, IdentifierType & numberOfLabels);
+
+  // compute Signed Distance Field of a binary image
+  typename RealImageType::Pointer
+  SDF(typename TOutputImage::Pointer labelImage);
+
+  // morphological dilation by thresholding the distance field
+  typename TOutputImage::Pointer
+  SDFDilate(typename TOutputImage::Pointer labelImage, double radius);
+
+  // morphological erosion by thresholding the distance field
+  typename TOutputImage::Pointer
+  SDFErode(typename TOutputImage::Pointer labelImage, double radius);
+
+  // zero-pad an image
+  typename TOutputImage::Pointer
+  ZeroPad(typename TOutputImage::Pointer labelImage, Size<Dimension> padSize);
+
+  void
+  GenerateData() override;
 
 private:
+  float m_CorticalBoneThickness = 0.1;
+
 #ifdef ITK_USE_CONCEPT_CHECKING
-  // Add concept checking such as
-  // itkConceptMacro( FloatingPointPixel, ( itk::Concept::IsFloatingPoint< typename InputImageType::PixelType > ) );
+  itkConceptMacro(CTInputPixelIsSigned, (itk::Concept::Signed<typename InputImageType::PixelType>));
+  itkConceptMacro(InputAndOutputMustHaveSameDimension,
+                  (itk::Concept::SameDimension<TInputImage::ImageDimension, TOutputImage::ImageDimension>));
 #endif
 };
 } // namespace itk

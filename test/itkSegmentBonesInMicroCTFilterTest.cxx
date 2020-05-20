@@ -19,6 +19,7 @@
 #include "itkSegmentBonesInMicroCTFilter.h"
 
 #include "itkCommand.h"
+#include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkTestingMacros.h"
 
@@ -52,20 +53,28 @@ public:
 };
 } // namespace
 
-int itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
+int
+itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
 {
-  if (argc < 2)
+  if (argc < 3)
   {
     std::cerr << "Missing parameters." << std::endl;
     std::cerr << "Usage: " << itkNameOfTestExecutableMacro(argv);
-    std::cerr << " outputImage";
+    std::cerr << " <inputImage> <outputImage> [corticalThickness]";
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
-  const char * outputImageFileName = argv[1];
+  const char * inputImageFileName = argv[1];
+  const char * outputImageFileName = argv[2];
 
-  constexpr unsigned int Dimension = 2;
-  using PixelType = float;
+  float corticalThickness = 0.1;
+  if (argc > 3)
+  {
+    corticalThickness = std::stof(argv[3]);
+  }
+
+  constexpr unsigned int Dimension = 3;
+  using PixelType = short;
   using ImageType = itk::Image<PixelType, Dimension>;
 
   using FilterType = itk::SegmentBonesInMicroCTFilter<ImageType, ImageType>;
@@ -73,27 +82,28 @@ int itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
 
   ITK_EXERCISE_BASIC_OBJECT_METHODS(filter, SegmentBonesInMicroCTFilter, ImageToImageFilter);
 
-  // Create input image to avoid test dependencies.
-  ImageType::SizeType size;
-  size.Fill(128);
-  ImageType::Pointer image = ImageType::New();
-  image->SetRegions(size);
-  image->Allocate();
-  image->FillBuffer(1.1f);
+  std::cout << "Reading image: " << inputImageFileName << std::endl;
+  using ReaderType = itk::ImageFileReader<ImageType>;
+  typename ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(inputImageFileName);
+  ITK_TRY_EXPECT_NO_EXCEPTION(reader->Update());
+  ImageType::Pointer image = reader->GetOutput();
 
+  std::cout << "Running the filter" << std::endl;
   ShowProgress::Pointer showProgress = ShowProgress::New();
   filter->AddObserver(itk::ProgressEvent(), showProgress);
   filter->SetInput(image);
+  filter->SetCorticalBoneThickness(corticalThickness);
+  ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
 
+  std::cout << "Writing label map: " << outputImageFileName << std::endl;
   using WriterType = itk::ImageFileWriter<ImageType>;
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName(outputImageFileName);
   writer->SetInput(filter->GetOutput());
   writer->SetUseCompression(true);
-
   ITK_TRY_EXPECT_NO_EXCEPTION(writer->Update());
 
-
-  std::cout << "Test finished." << std::endl;
+  std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;
 }
