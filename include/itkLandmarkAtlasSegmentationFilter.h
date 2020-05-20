@@ -15,15 +15,15 @@
  *  limitations under the License.
  *
  *=========================================================================*/
-#ifndef itkSegmentBonesInMicroCTFilter_h
-#define itkSegmentBonesInMicroCTFilter_h
+#ifndef itkLandmarkAtlasSegmentationFilter_h
+#define itkLandmarkAtlasSegmentationFilter_h
 
 #include "itkImageToImageFilter.h"
 
 namespace itk
 {
 
-/** \class SegmentBonesInMicroCTFilter
+/** \class LandmarkAtlasSegmentationFilter
  *
  * \brief Filters a image by iterating over its pixels.
  *
@@ -34,10 +34,10 @@ namespace itk
  *
  */
 template <typename TInputImage, typename TOutputImage>
-class SegmentBonesInMicroCTFilter : public ImageToImageFilter<TInputImage, TOutputImage>
+class LandmarkAtlasSegmentationFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
-  ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBonesInMicroCTFilter);
+  ITK_DISALLOW_COPY_AND_ASSIGN(LandmarkAtlasSegmentationFilter);
 
   static constexpr unsigned int InputImageDimension = TInputImage::ImageDimension;
   static constexpr unsigned int OutputImageDimension = TOutputImage::ImageDimension;
@@ -48,20 +48,20 @@ public:
   using OutputPixelType = typename OutputImageType::PixelType;
 
   /** Standard class typedefs. */
-  using Self = SegmentBonesInMicroCTFilter<InputImageType, OutputImageType>;
+  using Self = LandmarkAtlasSegmentationFilter<InputImageType, OutputImageType>;
   using Superclass = ImageToImageFilter<InputImageType, OutputImageType>;
   using Pointer = SmartPointer<Self>;
   using ConstPointer = SmartPointer<const Self>;
 
   /** Run-time type information. */
-  itkTypeMacro(SegmentBonesInMicroCTFilter, ImageToImageFilter);
+  itkTypeMacro(LandmarkAtlasSegmentationFilter, ImageToImageFilter);
 
   /** Standard New macro. */
   itkNewMacro(Self);
 
 protected:
-  SegmentBonesInMicroCTFilter();
-  ~SegmentBonesInMicroCTFilter() override = default;
+  LandmarkAtlasSegmentationFilter();
+  ~LandmarkAtlasSegmentationFilter() override = default;
 
   void PrintSelf(std::ostream & os, Indent indent) const override;
 
@@ -78,7 +78,7 @@ private:
 } // namespace itk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#  include "itkSegmentBonesInMicroCTFilter.hxx"
+#  include "itkLandmarkAtlasSegmentationFilter.hxx"
 #endif
 
-#endif // itkSegmentBonesInMicroCTFilter
+#endif // itkLandmarkAtlasSegmentationFilter

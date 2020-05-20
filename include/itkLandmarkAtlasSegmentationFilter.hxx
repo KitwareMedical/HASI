@@ -15,10 +15,10 @@
  *  limitations under the License.
  *
  *=========================================================================*/
-#ifndef itkSegmentBonesInMicroCTFilter_hxx
-#define itkSegmentBonesInMicroCTFilter_hxx
+#ifndef itkLandmarkAtlasSegmentationFilter_hxx
+#define itkLandmarkAtlasSegmentationFilter_hxx
 
-#include "itkSegmentBonesInMicroCTFilter.h"
+#include "itkLandmarkAtlasSegmentationFilter.h"
 
 #include "itkImageRegionIterator.h"
 #include "itkImageRegionConstIterator.h"
@@ -27,14 +27,14 @@ namespace itk
 {
 
 template <typename TInputImage, typename TOutputImage>
-SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>
-::SegmentBonesInMicroCTFilter()
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>
+::LandmarkAtlasSegmentationFilter()
 {}
 
 
 template <typename TInputImage, typename TOutputImage>
 void
-SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>
 ::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
@@ -43,7 +43,7 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>
 
 template <typename TInputImage, typename TOutputImage>
 void
-SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>
 ::GenerateData()
 {
   this->AllocateOutputs();
@@ -65,4 +65,4 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>
 
 } // end namespace itk
 
-#endif // itkSegmentBonesInMicroCTFilter_hxx
+#endif // itkLandmarkAtlasSegmentationFilter_hxx
