@@ -194,8 +194,8 @@ mainProcessing(std::string inputBase, std::string outputBase, std::string atlasB
   WriteTransform(rigidTransform, outputBase + "-landmarks.tfm");
 
 
-  typename ImageType::Pointer inputBone1 = ReadImage<ImageType>(inputBase + "-bone1.nrrd");
-  typename ImageType::Pointer atlasBone1 = ReadImage<ImageType>(atlasBase + "-bone1.nrrd");
+  typename ImageType::Pointer inputBone1 = ReadImage<ImageType>(inputBase + ".nrrd");
+  typename ImageType::Pointer atlasBone1 = ReadImage<ImageType>(atlasBase + ".nrrd");
 
   typename LabelImageType::Pointer inputLabels = ReadImage<LabelImageType>(inputBase + "-label.nrrd");
   typename LabelImageType::Pointer atlasLabels = ReadImage<LabelImageType>(atlasBase + "-label.nrrd");
