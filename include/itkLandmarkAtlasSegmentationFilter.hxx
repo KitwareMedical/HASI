@@ -20,8 +20,16 @@
 
 #include "itkLandmarkAtlasSegmentationFilter.h"
 
-#include "itkImageRegionIterator.h"
-#include "itkImageRegionConstIterator.h"
+#include "itkVersorRigid3DTransform.h"
+#include "itkLandmarkBasedTransformInitializer.h"
+//#include "itkImageRegistrationMethod.h"
+//#include "itkRegularStepGradientDescentOptimizer.h"
+//#include "itkMeanSquaresImageToImageMetric.h"
+//#include "itkResampleImageFilter.h"
+//#include "itkCommand.h"
+//#include "itkBSplineResampleImageFunction.h"
+//#include "itkCompositeTransform.h"
+//#include "itkSignedMaurerDistanceMapImageFilter.h"
 
 namespace itk
 {
@@ -46,13 +54,11 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   using RigidTransformType = itk::VersorRigid3DTransform<double>;
   typename RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
 
-  // std::vector<PointType> inputLandmarks = readSlicerFiducials(inputBase + ".fcsv");
-  // std::vector<PointType> atlasLandmarks = readSlicerFiducials(atlasBase + ".fcsv");
-  itkAssertOrThrowMacro(m_InputLandmarks.size() == 3, "There must be exactly 3 input landmarks");
-  itkAssertOrThrowMacro(m_AtlasLandmarks.size() == 3, "There must be exactly 3 atlas landmarks");
+  itkAssertOrThrowMacro(m_InputLandmarks->GetNumberOfPoints() == 3, "There must be exactly 3 input landmarks");
+  itkAssertOrThrowMacro(m_AtlasLandmarks->GetNumberOfPoints() == 3, "There must be exactly 3 atlas landmarks");
 
   using LandmarkBasedTransformInitializerType =
-    itk::LandmarkBasedTransformInitializer<RigidTransformType, ImageType, ImageType>;
+    itk::LandmarkBasedTransformInitializer<RigidTransformType, InputImageType, InputImageType>;
   typename LandmarkBasedTransformInitializerType::Pointer landmarkBasedTransformInitializer =
     LandmarkBasedTransformInitializerType::New();
 
@@ -71,24 +77,24 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   WriteTransform(rigidTransform, outputBase + "-landmarks.tfm");
 
 
-  typename ImageType::Pointer inputBone1 = ReadImage<ImageType>(inputBase + ".nrrd");
-  typename ImageType::Pointer atlasBone1 = ReadImage<ImageType>(atlasBase + ".nrrd");
+  typename InputImageType::Pointer inputBone1 = ReadImage<InputImageType>(inputBase + ".nrrd");
+  typename InputImageType::Pointer atlasBone1 = ReadImage<InputImageType>(atlasBase + ".nrrd");
 
-  typename LabelImageType::Pointer inputLabels = ReadImage<LabelImageType>(inputBase + "-label.nrrd");
-  typename LabelImageType::Pointer atlasLabels = ReadImage<LabelImageType>(atlasBase + "-label.nrrd");
+  typename OutputImageType::Pointer inputLabels = ReadImage<OutputImageType>(inputBase + "-label.nrrd");
+  typename OutputImageType::Pointer atlasLabels = ReadImage<OutputImageType>(atlasBase + "-label.nrrd");
 
 
   auto perBoneProcessing =
-    [](typename ImageType::Pointer bone1, typename LabelImageType::Pointer allLabels, unsigned char howManyLabels) {
+    [](typename InputImageType::Pointer bone1, typename OutputImageType::Pointer allLabels, unsigned char howManyLabels) {
       // bone1 and label images might have different extents (bone1 will be a strict subset)
-      typename LabelImageType::RegionType bone1Region = bone1->GetBufferedRegion();
-      typename ImageType::IndexType       index = bone1Region.GetIndex();
-      typename ImageType::PointType       p;
+      typename OutputImageType::RegionType bone1Region = bone1->GetBufferedRegion();
+      typename InputImageType::IndexType       index = bone1Region.GetIndex();
+      typename InputImageType::PointType       p;
       bone1->TransformIndexToPhysicalPoint(index, p);
       allLabels->TransformPhysicalPointToIndex(p, index);
       itk::Offset<3> indexAdjustment = index - allLabels->GetBufferedRegion().GetIndex();
 
-      typename LabelImageType::Pointer bone1whole = LabelImageType::New();
+      typename OutputImageType::Pointer bone1whole = OutputImageType::New();
       bone1whole->CopyInformation(bone1);
       bone1whole->SetRegions(bone1Region);
       bone1whole->Allocate(true);
@@ -96,14 +102,14 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
       // construct whole-bone1 segmentation by ignoring other bones and the split
       // into corical and trabecular bone, and bone marrow (labels 1, 2 and 3)
       itk::MultiThreaderBase::Pointer mt = itk::MultiThreaderBase::New();
-      mt->ParallelizeImageRegion<LabelImageType::ImageDimension>(
+      mt->ParallelizeImageRegion<OutputImageType::ImageDimension>(
         bone1Region,
-        [bone1whole, allLabels, indexAdjustment, howManyLabels](const typename LabelImageType::RegionType region) {
-          typename ImageType::RegionType labelRegion = region;
+        [bone1whole, allLabels, indexAdjustment, howManyLabels](const typename OutputImageType::RegionType region) {
+          typename InputImageType::RegionType labelRegion = region;
           labelRegion.SetIndex(labelRegion.GetIndex() + indexAdjustment);
 
-          itk::ImageRegionConstIterator<LabelImageType> iIt(allLabels, labelRegion);
-          itk::ImageRegionIterator<LabelImageType>      oIt(bone1whole, region);
+          itk::ImageRegionConstIterator<OutputImageType> iIt(allLabels, labelRegion);
+          itk::ImageRegionIterator<OutputImageType>      oIt(bone1whole, region);
           for (; !oIt.IsAtEnd(); ++iIt, ++oIt)
           {
             auto label = iIt.Get();
@@ -116,7 +122,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
         nullptr);
 
       using RealImageType = itk::Image<float, 3>;
-      using DistanceFieldType = itk::SignedMaurerDistanceMapImageFilter<LabelImageType, RealImageType>;
+      using DistanceFieldType = itk::SignedMaurerDistanceMapImageFilter<OutputImageType, RealImageType>;
       typename DistanceFieldType::Pointer distF = DistanceFieldType::New();
       distF->SetInput(bone1whole);
       distF->SetSquaredDistance(false);
@@ -128,9 +134,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
       mt->ParallelizeImageRegion<3>(
         bone1Region,
-        [bone1, distanceField](const typename ImageType::RegionType region) {
+        [bone1, distanceField](const typename InputImageType::RegionType region) {
           itk::ImageRegionConstIterator<RealImageType> iIt(distanceField, region);
-          itk::ImageRegionIterator<ImageType>          oIt(bone1, region);
+          itk::ImageRegionIterator<InputImageType>          oIt(bone1, region);
           for (; !oIt.IsAtEnd(); ++iIt, ++oIt)
           {
             float dist = iIt.Get();
@@ -181,7 +187,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   using IdentityTransformType = itk::IdentityTransform<double, Dimension>;
   IdentityTransformType::Pointer identityTransform = IdentityTransformType::New();
 
-  ImageType::RegionType fixedRegion = inputBone1->GetBufferedRegion();
+  InputImageType::RegionType fixedRegion = inputBone1->GetBufferedRegion();
   registration1->SetFixedImageRegion(fixedRegion);
   registration1->SetInitialTransformParameters(rigidTransform->GetParameters());
   registration1->SetTransform(rigidTransform);
@@ -361,13 +367,13 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   bsplineTransformCoarse->SetParameters(initialDeformableTransformParameters);
 
   // for deformable registration part, we want actual bone intensities
-  using MetricType = itk::MeanSquaresImageToImageMetric<ImageType, ImageType>;
+  using MetricType = itk::MeanSquaresImageToImageMetric<InputImageType, InputImageType>;
   typename MetricType::Pointer metric2 = MetricType::New();
   metric2->ReinitializeSeed(76926294);
 
-  using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType, double>;
+  using InterpolatorType = itk::LinearInterpolateImageFunction<InputImageType, double>;
   typename InterpolatorType::Pointer interpolator2 = InterpolatorType::New();
-  using RegistrationType = itk::ImageRegistrationMethod<ImageType, ImageType>;
+  using RegistrationType = itk::ImageRegistrationMethod<InputImageType, InputImageType>;
   typename RegistrationType::Pointer registration2 = RegistrationType::New();
   registration2->SetMetric(metric2);
   registration2->SetOptimizer(optimizer);
@@ -402,7 +408,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
   diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Resampling the atlas into the space of input image" << std::endl;
-  using ResampleFilterType = itk::ResampleImageFilter<LabelImageType, LabelImageType, double>;
+  using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
   resampleFilter->SetInput(atlasLabels);
   resampleFilter->SetTransform(affineTransform);
@@ -412,7 +418,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->Update();
   diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Affine Resampling complete!" << std::endl;
-  typename LabelImageType::Pointer segmentedImage = resampleFilter->GetOutput();
+  typename OutputImageType::Pointer segmentedImage = resampleFilter->GetOutput();
   WriteImage(segmentedImage, outputBase + "-A-label.nrrd", true);
 
   resampleFilter->SetTransform(compositeTransform);
