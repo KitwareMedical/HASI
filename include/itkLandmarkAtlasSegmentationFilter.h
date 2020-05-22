@@ -61,19 +61,24 @@ public:
 
   using PointSetType = PointSet<double, Dimension>;
 
-  /** Get/Set the atlas pointset.  */
-  itkSetConstObjectMacro(AtlasLandmarks, PointSetType);
-  itkGetConstObjectMacro(AtlasLandmarks, PointSetType);
+  /** Get/Set the input landmarks.  */
+  itkSetInputMacro(InputLandmarks, PointSetType);
+  itkGetInputMacro(InputLandmarks, PointSetType);
 
-  /** Get/Set the input point set.  */
-  itkSetConstObjectMacro(InputLandmarks, PointSetType);
-  itkGetConstObjectMacro(InputLandmarks, PointSetType);
+  /** Get/Set the atlas landmarks.  */
+  itkSetInputMacro(AtlasLandmarks, PointSetType);
+  itkGetInputMacro(AtlasLandmarks, PointSetType);
+
+  /** Get/Set the atlas labels.  */
+  itkSetInputMacro(AtlasLabels, TOutputImage);
+  itkGetInputMacro(AtlasLabels, TOutputImage);
 
 
 protected:
   LandmarkAtlasSegmentationFilter()
   {
-    Self::SetPrimaryInputName("InputImage"); // 0 (primary) is already required
+    this->SetNumberOfRequiredInputs(2);
+    Self::SetPrimaryInputName("InputImage");
     Self::AddRequiredInputName("AtlasImage", 1);
     Self::AddRequiredInputName("AtlasLabels", 2);
     Self::AddRequiredInputName("InputLandmarks", 3);
@@ -94,8 +99,9 @@ protected:
   GenerateData() override;
 
 private:
-  PointSetType m_AtlasLandmarks = nullptr;
-  PointSetType m_InputLandmarks = nullptr;
+  typename TOutputImage::Pointer m_AtlasLabels = nullptr;
+  typename PointSetType::Pointer m_AtlasLandmarks = nullptr;
+  typename PointSetType::Pointer m_InputLandmarks = nullptr;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,

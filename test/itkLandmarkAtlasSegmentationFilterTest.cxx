@@ -187,8 +187,10 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   ShowProgress::Pointer showProgress = ShowProgress::New();
   filter->AddObserver(itk::ProgressEvent(), showProgress);
   filter->SetInput(inputImage);
+  filter->SetInput(1, atlasImage);
+  filter->SetAtlasLabels(atlasLabels);
+  filter->SetInputLandmarks(inputLandmarks);
   filter->SetAtlasLandmarks(atlasLandmarks);
-  //filter->SetCorticalBoneThickness(corticalThickness);
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
   ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputLabelsFilename, true));
