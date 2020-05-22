@@ -45,7 +45,7 @@ public:
   ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBonesInMicroCTFilter);
 
   using InputImageType = TInputImage;
-  using OutputImageType = TInputImage;
+  using OutputImageType = TOutputImage;
   using InputPixelType = typename InputImageType::PixelType;
   using OutputPixelType = typename OutputImageType::PixelType;
 
@@ -67,7 +67,7 @@ public:
   itkSetMacro(CorticalBoneThickness, float);
 
 protected:
-  SegmentBonesInMicroCTFilter();
+  SegmentBonesInMicroCTFilter() = default;
   ~SegmentBonesInMicroCTFilter() override = default;
 
   void

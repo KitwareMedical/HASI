@@ -36,19 +36,13 @@
 
 namespace itk
 {
-
-template <typename TInputImage, typename TOutputImage>
-SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::SegmentBonesInMicroCTFilter()
-{}
-
-
 template <typename TInputImage, typename TOutputImage>
 void
 SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
+  os << indent << "CorticalBoneThickness: " << m_CorticalBoneThickness << std::endl;
 }
-
 
 template <typename TInputImage, typename TOutputImage>
 typename TOutputImage::Pointer
@@ -129,6 +123,7 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::ZeroPad(typename TOutput
   padder->Update();
   return padder->GetOutput();
 }
+
 
 template <typename TInputImage, typename TOutputImage>
 void
