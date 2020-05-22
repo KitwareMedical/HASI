@@ -53,7 +53,7 @@ public:
   }
 };
 
-std::vector<itk::Point<double, 3>>
+itk::PointSet<double, 3>::Pointer
 readSlicerFiducials(std::string fileName)
 {
   using PointType = itk::Point<double, 3>;
@@ -75,8 +75,9 @@ readSlicerFiducials(std::string fileName)
     throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
   std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
 
-  std::vector<PointType> points;
+  itk::IdentifierType pointCount = 0;
   std::getline(pointsFile, line);
+  itk::PointSet<double, 3>::Pointer points = itk::PointSet<double, 3>::New();
   while (!pointsFile.eof())
   {
     if (!pointsFile.good())
@@ -98,7 +99,7 @@ readSlicerFiducials(std::string fileName)
       if (ras && col < 2)
         p[col] *= -1;
     }
-    points.push_back(p);
+    points->SetPoint(pointCount++, p);
     std::getline(pointsFile, line);
   }
   return points;
@@ -178,16 +179,16 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   using PointsVector = std::vector<itk::Point<double, 3>>;
 
-  PointsVector inputLandmarks;
+  itk::PointSet<double, 3>::Pointer inputLandmarks;
   ITK_TRY_EXPECT_NO_EXCEPTION(inputLandmarks = readSlicerFiducials(inputLandmarksFilename));
-  PointsVector atlasLandmarks;
+  itk::PointSet<double, 3>::Pointer atlasLandmarks;
   ITK_TRY_EXPECT_NO_EXCEPTION(atlasLandmarks = readSlicerFiducials(atlasLandmarksFilename));
 
   ShowProgress::Pointer showProgress = ShowProgress::New();
   filter->AddObserver(itk::ProgressEvent(), showProgress);
   filter->SetInput(inputImage);
   filter->SetAtlasLandmarks(atlasLandmarks);
-  filter->SetCorticalBoneThickness(corticalThickness);
+  //filter->SetCorticalBoneThickness(corticalThickness);
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
   ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputLabelsFilename, true));
