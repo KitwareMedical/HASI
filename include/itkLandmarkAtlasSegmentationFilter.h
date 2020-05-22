@@ -59,19 +59,28 @@ public:
   /** Standard New macro. */
   itkNewMacro(Self);
 
-  using PointSetType = PointSet<double, Dimension>;
+  using OutputPointer = typename TOutputImage::Pointer;
 
-  /** Get/Set the input landmarks.  */
-  itkSetInputMacro(InputLandmarks, PointSetType);
-  itkGetInputMacro(InputLandmarks, PointSetType);
+  /** Get/Set the input labels.
+   * This is basic segmentation into bones,
+   * or cortical, trabecular and marrow. */
+  itkSetObjectMacro(InputLabels, TOutputImage);
+  itkGetModifiableObjectMacro(InputLabels, TOutputImage);
 
-  /** Get/Set the atlas landmarks.  */
-  itkSetInputMacro(AtlasLandmarks, PointSetType);
-  itkGetInputMacro(AtlasLandmarks, PointSetType);
+  /** Get/Set the atlas labels. */
+  itkSetObjectMacro(AtlasLabels, TOutputImage);
+  itkGetModifiableObjectMacro(AtlasLabels, TOutputImage);
 
-  /** Get/Set the atlas labels.  */
-  itkSetInputMacro(AtlasLabels, TOutputImage);
-  itkGetInputMacro(AtlasLabels, TOutputImage);
+  using PointType = typename TOutputImage::PointType;
+  using LandmarksType = std::vector<PointType>;
+
+  /** Get/Set the input landmarks. */
+  itkSetMacro(InputLandmarks, LandmarksType);
+  itkGetMacro(InputLandmarks, LandmarksType);
+
+  /** Get/Set the atlas landmarks. */
+  itkSetMacro(AtlasLandmarks, LandmarksType);
+  itkGetMacro(AtlasLandmarks, LandmarksType);
 
 
 protected:
@@ -80,28 +89,31 @@ protected:
     this->SetNumberOfRequiredInputs(2);
     Self::SetPrimaryInputName("InputImage");
     Self::AddRequiredInputName("AtlasImage", 1);
-    Self::AddRequiredInputName("AtlasLabels", 2);
-    Self::AddRequiredInputName("InputLandmarks", 3);
-    Self::AddRequiredInputName("AtlasLandmarks", 4);
+
+    Self::AddRequiredInputName("InputLabels", 2);
+    Self::AddRequiredInputName("AtlasLabels", 3);
+    Self::AddRequiredInputName("InputLandmarks", 4);
+    Self::AddRequiredInputName("AtlasLandmarks", 5);
   }
   ~LandmarkAtlasSegmentationFilter() override = default;
 
   void
   PrintSelf(std::ostream & os, Indent indent) const override;
 
-  using RealImageType = itk::Image<float, 3>;
+  using RealImageType = Image<float, Dimension>;
   using RegionType = typename TOutputImage::RegionType;
   using IndexType = typename TOutputImage::IndexType;
   using SizeType = typename TOutputImage::SizeType;
-  using PointType = typename TOutputImage::PointType;
 
   void
   GenerateData() override;
 
 private:
+  typename TOutputImage::Pointer m_InputLabels = nullptr;
   typename TOutputImage::Pointer m_AtlasLabels = nullptr;
-  typename PointSetType::Pointer m_AtlasLandmarks = nullptr;
-  typename PointSetType::Pointer m_InputLandmarks = nullptr;
+
+  LandmarksType m_AtlasLandmarks;
+  LandmarksType m_InputLandmarks;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,

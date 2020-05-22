@@ -53,7 +53,7 @@ public:
   }
 };
 
-itk::PointSet<double, 3>::Pointer
+std::vector<itk::Point<double, 3>>
 readSlicerFiducials(std::string fileName)
 {
   using PointType = itk::Point<double, 3>;
@@ -75,9 +75,8 @@ readSlicerFiducials(std::string fileName)
     throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
   std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
 
-  itk::IdentifierType pointCount = 0;
+  std::vector<PointType> points;
   std::getline(pointsFile, line);
-  itk::PointSet<double, 3>::Pointer points = itk::PointSet<double, 3>::New();
   while (!pointsFile.eof())
   {
     if (!pointsFile.good())
@@ -99,7 +98,7 @@ readSlicerFiducials(std::string fileName)
       if (ras && col < 2)
         p[col] *= -1;
     }
-    points->SetPoint(pointCount++, p);
+    points.push_back(p);
     std::getline(pointsFile, line);
   }
   return points;
@@ -144,21 +143,22 @@ WriteTransform(const itk::Object * transform, std::string fileName)
 int
 itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 {
-  if (argc < 7)
+  if (argc < 8)
   {
     std::cerr << "Missing parameters." << std::endl;
     std::cerr << "Usage: " << itkNameOfTestExecutableMacro(argv);
-    std::cerr << " <inputImage> <atlasImage> <atlasLabels> <inputLandmarks> <atlasLandmarks>";
+    std::cerr << " <inputImage> <atlasImage> <inputBones> <atlasLabels> <inputLandmarks> <atlasLandmarks>";
     std::cerr << " <outputLabels> [affineTransform] [bsplineTransform]";
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
   const char * inputImageFilename = argv[1];
   const char * atlasImageFilename = argv[2];
-  const char * atlasLabelsFilename = argv[3];
-  const char * inputLandmarksFilename = argv[4];
-  const char * atlasLandmarksFilename = argv[5];
-  const char * outputLabelsFilename = argv[6];
+  const char * inputBonesFilename = argv[3];
+  const char * atlasLabelsFilename = argv[4];
+  const char * inputLandmarksFilename = argv[5];
+  const char * atlasLandmarksFilename = argv[6];
+  const char * outputLabelsFilename = argv[7];
 
 
   constexpr unsigned int Dimension = 3;
@@ -172,6 +172,8 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   ShortImageType::Pointer inputImage;
   ITK_TRY_EXPECT_NO_EXCEPTION(inputImage = ReadImage<ShortImageType>(inputImageFilename));
+  LabelImageType::Pointer inputBones;
+  ITK_TRY_EXPECT_NO_EXCEPTION(inputBones = ReadImage<LabelImageType>(inputBonesFilename));
   ShortImageType::Pointer atlasImage;
   ITK_TRY_EXPECT_NO_EXCEPTION(atlasImage = ReadImage<ShortImageType>(atlasImageFilename));
   LabelImageType::Pointer atlasLabels;
@@ -179,15 +181,16 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   using PointsVector = std::vector<itk::Point<double, 3>>;
 
-  itk::PointSet<double, 3>::Pointer inputLandmarks;
+  PointsVector inputLandmarks;
   ITK_TRY_EXPECT_NO_EXCEPTION(inputLandmarks = readSlicerFiducials(inputLandmarksFilename));
-  itk::PointSet<double, 3>::Pointer atlasLandmarks;
+  PointsVector atlasLandmarks;
   ITK_TRY_EXPECT_NO_EXCEPTION(atlasLandmarks = readSlicerFiducials(atlasLandmarksFilename));
 
   ShowProgress::Pointer showProgress = ShowProgress::New();
   filter->AddObserver(itk::ProgressEvent(), showProgress);
   filter->SetInput(inputImage);
   filter->SetInput(1, atlasImage);
+  filter->SetInputLabels(inputBones);
   filter->SetAtlasLabels(atlasLabels);
   filter->SetInputLandmarks(inputLandmarks);
   filter->SetAtlasLandmarks(atlasLandmarks);
@@ -195,12 +198,12 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
   ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputLabelsFilename, true));
 
-  if (argc > 7)
+  if (argc > 8)
   {
     const char * affineTransformFilename = argv[7];
     // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), affineTransformFilename));
   }
-  if (argc > 8)
+  if (argc > 9)
   {
     const char * bsplineTransformFilename = argv[8];
     // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetBSplineTransform(), bsplineTransformFilename));
