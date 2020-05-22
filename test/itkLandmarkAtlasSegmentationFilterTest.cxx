@@ -22,6 +22,7 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkTestingMacros.h"
+#include "itkTransformFileWriter.h"
 
 namespace
 {
@@ -51,9 +52,96 @@ public:
     std::cout << " " << processObject->GetProgress();
   }
 };
+
+std::vector<itk::Point<double, 3>>
+readSlicerFiducials(std::string fileName)
+{
+  using PointType = itk::Point<double, 3>;
+  std::ifstream pointsFile(fileName.c_str());
+  std::string   line;
+  // ignore first 3 lines (comments of fiducials savefile)
+  std::getline(pointsFile, line); //# Markups fiducial file version = 4.10
+  std::getline(pointsFile, line); //# CoordinateSystem = 0
+  line = line.substr(line.length() - 3);
+  bool ras = false;
+  if (line == "RAS" || line[line.length() - 1] == '0')
+    ras = true;
+  else if (line == "LPS" || line[line.length() - 1] == '1')
+    ; // LPS, great
+  else if (line == "IJK" || line[line.length() - 1] == '2')
+    throw itk::ExceptionObject(
+      __FILE__, __LINE__, "Fiducials file with IJK coordinates is not supported", __FUNCTION__);
+  else
+    throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
+  std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
+
+  std::vector<PointType> points;
+  std::getline(pointsFile, line);
+  while (!pointsFile.eof())
+  {
+    if (!pointsFile.good())
+      break;
+    PointType         p;
+    std::stringstream iss(line);
+
+    std::string val;
+    std::getline(iss, val, ','); // ignore ID
+    for (int col = 0; col < 3; ++col)
+    {
+      std::getline(iss, val, ',');
+      if (!iss.good())
+        break;
+
+      std::stringstream convertor(val);
+      convertor >> p[col];
+
+      if (ras && col < 2)
+        p[col] *= -1;
+    }
+    points.push_back(p);
+    std::getline(pointsFile, line);
+  }
+  return points;
+}
+
+template <typename TImage>
+itk::SmartPointer<TImage>
+ReadImage(std::string filename)
+{
+  using ReaderType = itk::ImageFileReader<TImage>;
+  typename ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(filename);
+  reader->Update();
+  itk::SmartPointer<TImage> out = reader->GetOutput();
+  out->DisconnectPipeline();
+  return out;
+}
+
+template <typename TImage>
+void
+WriteImage(TImage * out, std::string filename, bool compress)
+{
+  using WriterType = itk::ImageFileWriter<TImage>;
+  typename WriterType::Pointer w = WriterType::New();
+  w->SetInput(out);
+  w->SetFileName(filename);
+  w->SetUseCompression(compress);
+  w->Update();
+}
+
+void
+WriteTransform(const itk::Object * transform, std::string fileName)
+{
+  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
+  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
+  transformWriter->SetInput(transform);
+  transformWriter->SetFileName(fileName);
+  transformWriter->Update();
+}
 } // namespace
 
-int itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
+int
+itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 {
   if (argc < 7)
   {
@@ -64,49 +152,56 @@ int itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
-  const char * inputImage = argv[1];
-  const char * atlasImage = argv[2];
-  const char * atlasLabels = argv[3];
-  const char * inputLandmarks = argv[4];
-  const char * atlasLandmarks = argv[5];
-  const char * outputLabels = argv[6];
+  const char * inputImageFilename = argv[1];
+  const char * atlasImageFilename = argv[2];
+  const char * atlasLabelsFilename = argv[3];
+  const char * inputLandmarksFilename = argv[4];
+  const char * atlasLandmarksFilename = argv[5];
+  const char * outputLabelsFilename = argv[6];
 
-  float corticalThickness = 0.1;
-  if (argc > 3)
-  {
-    corticalThickness = std::stof(argv[3]);
-  }
 
   constexpr unsigned int Dimension = 3;
-  using PixelType = short;
-  using ImageType = itk::Image<PixelType, Dimension>;
+  using ShortImageType = itk::Image<short, Dimension>;
+  using LabelImageType = itk::Image<unsigned char, Dimension>;
 
-  using FilterType = itk::LandmarkAtlasSegmentationFilter<ImageType, ImageType>;
+  using FilterType = itk::LandmarkAtlasSegmentationFilter<ShortImageType, LabelImageType>;
   FilterType::Pointer filter = FilterType::New();
 
   ITK_EXERCISE_BASIC_OBJECT_METHODS(filter, LandmarkAtlasSegmentationFilter, ImageToImageFilter);
 
-  std::cout << "Reading image: " << inputImage << std::endl;
-  using ReaderType = itk::ImageFileReader<ImageType>;
-  typename ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(inputImage);
-  ITK_TRY_EXPECT_NO_EXCEPTION(reader->Update());
-  ImageType::Pointer image = reader->GetOutput();
+  ShortImageType::Pointer inputImage;
+  ITK_TRY_EXPECT_NO_EXCEPTION(inputImage = ReadImage<ShortImageType>(inputImageFilename));
+  ShortImageType::Pointer atlasImage;
+  ITK_TRY_EXPECT_NO_EXCEPTION(atlasImage = ReadImage<ShortImageType>(atlasImageFilename));
+  LabelImageType::Pointer atlasLabels;
+  ITK_TRY_EXPECT_NO_EXCEPTION(atlasLabels = ReadImage<LabelImageType>(atlasLabelsFilename));
 
-  std::cout << "Running the filter" << std::endl;
+  using PointsVector = std::vector<itk::Point<double, 3>>;
+
+  PointsVector inputLandmarks;
+  ITK_TRY_EXPECT_NO_EXCEPTION(inputLandmarks = readSlicerFiducials(inputLandmarksFilename));
+  PointsVector atlasLandmarks;
+  ITK_TRY_EXPECT_NO_EXCEPTION(atlasLandmarks = readSlicerFiducials(atlasLandmarksFilename));
+
   ShowProgress::Pointer showProgress = ShowProgress::New();
   filter->AddObserver(itk::ProgressEvent(), showProgress);
-  filter->SetInput(image);
+  filter->SetInput(inputImage);
+  filter->SetAtlasLandmarks(atlasLandmarks);
   filter->SetCorticalBoneThickness(corticalThickness);
-  ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
 
-  std::cout << "Writing label map: " << outputLabels << std::endl;
-  using WriterType = itk::ImageFileWriter<ImageType>;
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetFileName(outputLabels);
-  writer->SetInput(filter->GetOutput());
-  writer->SetUseCompression(true);
-  ITK_TRY_EXPECT_NO_EXCEPTION(writer->Update());
+  ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputLabelsFilename, true));
+
+  if (argc > 7)
+  {
+    const char * affineTransformFilename = argv[7];
+    // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), affineTransformFilename));
+  }
+  if (argc > 8)
+  {
+    const char * bsplineTransformFilename = argv[8];
+    // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetBSplineTransform(), bsplineTransformFilename));
+  }
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;
