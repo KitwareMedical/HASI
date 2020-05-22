@@ -19,6 +19,7 @@
 #define itkLandmarkAtlasSegmentationFilter_h
 
 #include "itkImageToImageFilter.h"
+#include "itkPointSet.h"
 
 namespace itk
 {
@@ -39,11 +40,10 @@ class LandmarkAtlasSegmentationFilter : public ImageToImageFilter<TInputImage, T
 public:
   ITK_DISALLOW_COPY_AND_ASSIGN(LandmarkAtlasSegmentationFilter);
 
-  static constexpr unsigned int InputImageDimension = TInputImage::ImageDimension;
-  static constexpr unsigned int OutputImageDimension = TOutputImage::ImageDimension;
+  static constexpr unsigned Dimension = TInputImage::ImageDimension;
 
   using InputImageType = TInputImage;
-  using OutputImageType = TInputImage;
+  using OutputImageType = TOutputImage;
   using InputPixelType = typename InputImageType::PixelType;
   using OutputPixelType = typename OutputImageType::PixelType;
 
@@ -59,20 +59,47 @@ public:
   /** Standard New macro. */
   itkNewMacro(Self);
 
+  using PointSetType = PointSet<double, Dimension>;
+
+  /** Get/Set the atlas pointset.  */
+  itkSetConstObjectMacro(AtlasLandmarks, PointSetType);
+  itkGetConstObjectMacro(AtlasLandmarks, PointSetType);
+
+  /** Get/Set the input point set.  */
+  itkSetConstObjectMacro(InputLandmarks, PointSetType);
+  itkGetConstObjectMacro(InputLandmarks, PointSetType);
+
+
 protected:
-  LandmarkAtlasSegmentationFilter();
+  LandmarkAtlasSegmentationFilter()
+  {
+    Self::SetPrimaryInputName("InputImage"); // 0 (primary) is already required
+    Self::AddRequiredInputName("AtlasImage", 1);
+    Self::AddRequiredInputName("AtlasLabels", 2);
+    Self::AddRequiredInputName("InputLandmarks", 3);
+    Self::AddRequiredInputName("AtlasLandmarks", 4);
+  }
   ~LandmarkAtlasSegmentationFilter() override = default;
 
-  void PrintSelf(std::ostream & os, Indent indent) const override;
+  void
+  PrintSelf(std::ostream & os, Indent indent) const override;
 
-  using OutputRegionType = typename OutputImageType::RegionType;
+  using RealImageType = itk::Image<float, 3>;
+  using RegionType = typename TOutputImage::RegionType;
+  using IndexType = typename TOutputImage::IndexType;
+  using SizeType = typename TOutputImage::SizeType;
+  using PointType = typename TOutputImage::PointType;
 
-  void GenerateData() override;
+  void
+  GenerateData() override;
 
 private:
+  PointSetType m_AtlasLandmarks = nullptr;
+  PointSetType m_InputLandmarks = nullptr;
+
 #ifdef ITK_USE_CONCEPT_CHECKING
-  // Add concept checking such as
-  // itkConceptMacro( FloatingPointPixel, ( itk::Concept::IsFloatingPoint< typename InputImageType::PixelType > ) );
+  itkConceptMacro(InputAndOutputMustHaveSameDimension,
+                  (itk::Concept::SameDimension<TInputImage::ImageDimension, TOutputImage::ImageDimension>));
 #endif
 };
 } // namespace itk
