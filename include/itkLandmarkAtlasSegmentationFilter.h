@@ -19,7 +19,10 @@
 #define itkLandmarkAtlasSegmentationFilter_h
 
 #include "itkImageToImageFilter.h"
-#include "itkPointSet.h"
+#include "itkVersorRigid3DTransform.h"
+#include "itkAffineTransform.h"
+#include "itkCompositeTransform.h"
+
 
 namespace itk
 {
@@ -59,7 +62,6 @@ public:
   /** Standard New macro. */
   itkNewMacro(Self);
 
-  using OutputPointer = typename TOutputImage::Pointer;
 
   /** Get/Set the input labels.
    * This is basic segmentation into bones,
@@ -82,6 +84,29 @@ public:
   itkSetMacro(AtlasLandmarks, LandmarksType);
   itkGetMacro(AtlasLandmarks, LandmarksType);
 
+  using RigidTransformType = itk::VersorRigid3DTransform<double>;
+
+  /** Only valid after Update. */
+  itkGetConstObjectMacro(LandmarksTransform, RigidTransformType);
+
+  /** Only valid after Update. */
+  itkGetConstObjectMacro(RigidTransform, RigidTransformType);
+
+  using AffineTransformType = itk::AffineTransform<double, Dimension>;
+
+  /** Only valid after Update. */
+  itkGetConstObjectMacro(AffineTransform, AffineTransformType);
+
+  using CompositeTransformType = itk::CompositeTransform<>;
+
+  /** Only valid after Update. */
+  itkGetConstObjectMacro(FinalTransform, CompositeTransformType);
+
+  /** Should the registration stop at affine transform?
+   * If false, BSpline transform is computed. */
+  itkSetMacro(StopAtAffine, bool);
+  itkGetMacro(StopAtAffine, bool);
+  itkBooleanMacro(StopAtAffine);
 
 protected:
   LandmarkAtlasSegmentationFilter()
@@ -89,16 +114,17 @@ protected:
     this->SetNumberOfRequiredInputs(2);
     Self::SetPrimaryInputName("InputImage");
     Self::AddRequiredInputName("AtlasImage", 1);
-
-    Self::AddRequiredInputName("InputLabels", 2);
-    Self::AddRequiredInputName("AtlasLabels", 3);
-    Self::AddRequiredInputName("InputLandmarks", 4);
-    Self::AddRequiredInputName("AtlasLandmarks", 5);
   }
   ~LandmarkAtlasSegmentationFilter() override = default;
 
   void
   PrintSelf(std::ostream & os, Indent indent) const override;
+
+  // we need to override this in order to allow
+  // the inputs to cover different physical space
+  void
+  VerifyInputInformation() const override
+  {}
 
   using RealImageType = Image<float, Dimension>;
   using RegionType = typename TOutputImage::RegionType;
@@ -117,6 +143,13 @@ private:
 
   LandmarksType m_AtlasLandmarks;
   LandmarksType m_InputLandmarks;
+
+  typename RigidTransformType::Pointer     m_LandmarksTransform = nullptr;
+  typename RigidTransformType::Pointer     m_RigidTransform = nullptr;
+  typename AffineTransformType::Pointer    m_AffineTransform = nullptr;
+  typename CompositeTransformType::Pointer m_FinalTransform = nullptr;
+
+  bool m_StopAtAffine = true;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,

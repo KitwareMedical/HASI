@@ -117,27 +117,27 @@ ReadImage(std::string filename)
   return out;
 }
 
-template <typename TImage>
-void
-WriteImage(TImage * out, std::string filename, bool compress)
-{
-  using WriterType = itk::ImageFileWriter<TImage>;
-  typename WriterType::Pointer w = WriterType::New();
-  w->SetInput(out);
-  w->SetFileName(filename);
-  w->SetUseCompression(compress);
-  w->Update();
-}
-
-void
-WriteTransform(const itk::Object * transform, std::string fileName)
-{
-  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
-  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
-  transformWriter->SetInput(transform);
-  transformWriter->SetFileName(fileName);
-  transformWriter->Update();
-}
+//template <typename TImage>
+//void
+//WriteImage(TImage * out, std::string filename, bool compress)
+//{
+//  using WriterType = itk::ImageFileWriter<TImage>;
+//  typename WriterType::Pointer w = WriterType::New();
+//  w->SetInput(out);
+//  w->SetFileName(filename);
+//  w->SetUseCompression(compress);
+//  w->Update();
+//}
+//
+//void
+//WriteTransform(const itk::Object * transform, std::string fileName)
+//{
+//  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
+//  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
+//  transformWriter->SetInput(transform);
+//  transformWriter->SetFileName(fileName);
+//  transformWriter->Update();
+//}
 } // namespace
 
 int
@@ -147,8 +147,7 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   {
     std::cerr << "Missing parameters." << std::endl;
     std::cerr << "Usage: " << itkNameOfTestExecutableMacro(argv);
-    std::cerr << " <inputImage> <atlasImage> <inputBones> <atlasLabels> <inputLandmarks> <atlasLandmarks>";
-    std::cerr << " <outputLabels> [affineTransform] [bsplineTransform]";
+    std::cerr << " <inputImage> <atlasImage> <inputBones> <atlasLabels> <inputLandmarks> <atlasLandmarks> <outputBase>";
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
@@ -158,7 +157,8 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   const char * atlasLabelsFilename = argv[4];
   const char * inputLandmarksFilename = argv[5];
   const char * atlasLandmarksFilename = argv[6];
-  const char * outputLabelsFilename = argv[7];
+
+  const std::string outputBase = argv[7];
 
 
   constexpr unsigned int Dimension = 3;
@@ -196,18 +196,14 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   filter->SetAtlasLandmarks(atlasLandmarks);
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputLabelsFilename, true));
-
-  if (argc > 8)
-  {
-    const char * affineTransformFilename = argv[7];
-    // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), affineTransformFilename));
-  }
-  if (argc > 9)
-  {
-    const char * bsplineTransformFilename = argv[8];
-    // ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetBSplineTransform(), bsplineTransformFilename));
-  }
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetLandmarksTransform(), outputBase + "L.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetRigidTransform(), outputBase + "R.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), outputBase + "A.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "A.nrrd", true));
+  filter->SetStopAtAffine(false);
+  ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetFinalTransform(), outputBase + "BS.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "BS.nrrd", true));
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;

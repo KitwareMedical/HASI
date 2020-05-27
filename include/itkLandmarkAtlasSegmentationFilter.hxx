@@ -20,15 +20,15 @@
 
 #include "itkLandmarkAtlasSegmentationFilter.h"
 
-#include "itkVersorRigid3DTransform.h"
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkSignedMaurerDistanceMapImageFilter.h"
 #include "itkImageDuplicator.h"
 #include "itkImageRegistrationMethod.h"
 #include "itkRegularStepGradientDescentOptimizer.h"
 #include "itkMeanSquaresImageToImageMetric.h"
-#include "itkCompositeTransform.h"
 #include "itkResampleImageFilter.h"
+
+#include "itkTransformFileWriter.h"
 
 namespace itk
 {
@@ -50,6 +50,28 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::Duplicate(const TInp
   return dup->GetOutput();
 }
 
+template <typename TImage>
+void
+WriteImage(TImage * out, std::string filename, bool compress)
+{
+  using WriterType = itk::ImageFileWriter<TImage>;
+  typename WriterType::Pointer w = WriterType::New();
+  w->SetInput(out);
+  w->SetFileName(filename);
+  w->SetUseCompression(compress);
+  w->Update();
+}
+
+void
+WriteTransform(const itk::Object * transform, std::string fileName)
+{
+  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
+  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
+  transformWriter->SetInput(transform);
+  transformWriter->SetFileName(fileName);
+  transformWriter->Update();
+}
+
 template <typename TInputImage, typename TOutputImage>
 void
 LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
@@ -61,8 +83,8 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   const RegionType &     outputRegion = output->GetRequestedRegion();
   RegionType             inputRegion = RegionType(outputRegion.GetSize());
 
-  using RigidTransformType = itk::VersorRigid3DTransform<double>;
-  typename RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
+
+  m_LandmarksTransform = RigidTransformType::New();
 
   itkAssertOrThrowMacro(m_InputLandmarks.size() == 3, "There must be exactly 3 input landmarks");
   itkAssertOrThrowMacro(m_AtlasLandmarks.size() == 3, "There must be exactly 3 atlas landmarks");
@@ -75,16 +97,14 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   landmarkBasedTransformInitializer->SetFixedLandmarks(m_InputLandmarks);
   landmarkBasedTransformInitializer->SetMovingLandmarks(m_AtlasLandmarks);
 
-  rigidTransform->SetIdentity();
-  landmarkBasedTransformInitializer->SetTransform(rigidTransform);
+  m_LandmarksTransform->SetIdentity();
+  landmarkBasedTransformInitializer->SetTransform(m_LandmarksTransform);
   landmarkBasedTransformInitializer->InitializeTransform();
 
   // force rotation to be around center of femur head
-  rigidTransform->SetCenter(m_InputLandmarks.front());
+  m_LandmarksTransform->SetCenter(m_InputLandmarks.front());
   // and make sure that the other corresponding point maps to it perfectly
-  rigidTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
-
-  // WriteTransform(rigidTransform, outputBase + "-landmarks.tfm"); // TODO: turn this into an output ivar
+  m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
 
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
@@ -168,7 +188,6 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
                                                        // WriteImage(atlasBone1, outputBase + "-bone1a.nrrd", false);
 
 
-  using AffineTransformType = itk::AffineTransform<double, Dimension>;
   constexpr unsigned int SplineOrder = 3;
   using CoordinateRepType = double;
   using DeformableTransformType = itk::BSplineTransform<CoordinateRepType, Dimension, SplineOrder>;
@@ -195,8 +214,8 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
   InputImageType::RegionType fixedRegion = inputBone1->GetBufferedRegion();
   registration1->SetFixedImageRegion(fixedRegion);
-  registration1->SetInitialTransformParameters(rigidTransform->GetParameters());
-  registration1->SetTransform(rigidTransform);
+  registration1->SetInitialTransformParameters(m_LandmarksTransform->GetParameters());
+  registration1->SetTransform(m_LandmarksTransform);
 
 
   //  Define optimizer normalization to compensate for different dynamic range
@@ -209,7 +228,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   avgSpacing = std::pow(avgSpacing, 1 / 3.0); // geometric mean has equivalent voxel volume
 
   using OptimizerScalesType = OptimizerType::ScalesType;
-  OptimizerScalesType optimizerScales(rigidTransform->GetNumberOfParameters());
+  OptimizerScalesType optimizerScales(m_LandmarksTransform->GetNumberOfParameters());
   const double        translationScale = 1.0 / (1000.0 * avgSpacing);
 
   optimizerScales[0] = 1.0;
@@ -277,21 +296,20 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   {
     std::cout << "Stop condition = " << registration1->GetOptimizer()->GetStopConditionDescription() << std::endl;
   }
-  rigidTransform->SetParameters(registration1->GetLastTransformParameters());
-  // WriteTransform(rigidTransform, outputBase + "-rigid.tfm"); // TODO: turn into output ivar
+  m_RigidTransform = RigidTransformType::New();
+  m_RigidTransform->SetParameters(registration1->GetLastTransformParameters());
 
 
   //  Perform Affine Registration
-  AffineTransformType::Pointer affineTransform = AffineTransformType::New();
-  affineTransform->SetCenter(rigidTransform->GetCenter());
-  affineTransform->SetTranslation(rigidTransform->GetTranslation());
-  affineTransform->SetMatrix(rigidTransform->GetMatrix());
-  // WriteTransform(affineTransform, outputBase + "-affineInit.tfm"); // debug
+  m_AffineTransform = AffineTransformType::New();
+  m_AffineTransform->SetCenter(m_RigidTransform->GetCenter());
+  m_AffineTransform->SetTranslation(m_RigidTransform->GetTranslation());
+  m_AffineTransform->SetMatrix(m_RigidTransform->GetMatrix());
 
-  registration1->SetTransform(affineTransform);
-  registration1->SetInitialTransformParameters(affineTransform->GetParameters());
+  registration1->SetTransform(m_AffineTransform);
+  registration1->SetInitialTransformParameters(m_AffineTransform->GetParameters());
 
-  optimizerScales = OptimizerScalesType(affineTransform->GetNumberOfParameters());
+  optimizerScales = OptimizerScalesType(m_AffineTransform->GetNumberOfParameters());
   optimizerScales[0] = 1.0;
   optimizerScales[1] = 1.0;
   optimizerScales[2] = 1.0;
@@ -322,107 +340,104 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   std::cout << " Starting Affine Registration" << std::endl;
   registration1->Update();
   std::cout << " Affine Registration completed" << std::endl;
-  affineTransform->SetParameters(registration1->GetLastTransformParameters());
-  // WriteTransform(affineTransform, outputBase + "-affine.tfm"); // TODO: turn into output ivar
+  m_AffineTransform->SetParameters(registration1->GetLastTransformParameters());
 
   inputDF1 = nullptr; // deallocate it
   atlasDF1 = nullptr; // deallocate it
 
-  //  Perform Deformable Registration
-  using CompositeTransformType = itk::CompositeTransform<>;
-
-  typename DeformableTransformType::Pointer bsplineTransformCoarse = DeformableTransformType::New();
-  typename CompositeTransformType::Pointer  compositeTransform = CompositeTransformType::New();
-  compositeTransform->AddTransform(affineTransform);
-  compositeTransform->AddTransform(bsplineTransformCoarse);
-  compositeTransform->SetOnlyMostRecentTransformToOptimizeOn();
-
-  unsigned int numberOfGridNodesInOneDimensionCoarse = 5;
-
-  typename DeformableTransformType::PhysicalDimensionsType fixedPhysicalDimensions;
-  typename DeformableTransformType::MeshSizeType           meshSize;
-  typename DeformableTransformType::OriginType             fixedOrigin;
-
-  for (unsigned int i = 0; i < Dimension; i++)
-  {
-    fixedOrigin[i] = inputBone1->GetOrigin()[i];
-    fixedPhysicalDimensions[i] = inputBone1->GetSpacing()[i] * static_cast<double>(fixedRegion.GetSize()[i] - 1);
-  }
-  meshSize.Fill(numberOfGridNodesInOneDimensionCoarse - SplineOrder);
-
-  bsplineTransformCoarse->SetTransformDomainOrigin(fixedOrigin);
-  bsplineTransformCoarse->SetTransformDomainPhysicalDimensions(fixedPhysicalDimensions);
-  bsplineTransformCoarse->SetTransformDomainMeshSize(meshSize);
-  bsplineTransformCoarse->SetTransformDomainDirection(inputBone1->GetDirection());
-
-  using ParametersType = DeformableTransformType::ParametersType;
-
-  unsigned int numberOfBSplineParameters = bsplineTransformCoarse->GetNumberOfParameters();
-
-  optimizerScales = OptimizerScalesType(numberOfBSplineParameters);
-  optimizerScales.Fill(1.0);
-  optimizer->SetScales(optimizerScales);
-
-  ParametersType initialDeformableTransformParameters(numberOfBSplineParameters);
-  initialDeformableTransformParameters.Fill(0.0);
-  bsplineTransformCoarse->SetParameters(initialDeformableTransformParameters);
-
-  // for deformable registration part, we want actual bone intensities
-  using MetricType = itk::MeanSquaresImageToImageMetric<InputImageType, InputImageType>;
-  typename MetricType::Pointer metric2 = MetricType::New();
-  metric2->ReinitializeSeed(76926294);
-
-  using InterpolatorType = itk::LinearInterpolateImageFunction<InputImageType, double>;
-  typename InterpolatorType::Pointer interpolator2 = InterpolatorType::New();
-  using RegistrationType = itk::ImageRegistrationMethod<InputImageType, InputImageType>;
-  typename RegistrationType::Pointer registration2 = RegistrationType::New();
-  registration2->SetMetric(metric2);
-  registration2->SetOptimizer(optimizer);
-  registration2->SetInterpolator(interpolator2);
-  registration2->SetInitialTransformParameters(compositeTransform->GetParameters());
-  registration2->SetTransform(compositeTransform);
-  registration2->SetFixedImageRegion(fixedRegion);
-  registration2->SetFixedImage(inputBone1);
-  registration2->SetMovingImage(atlasBone1);
-
-  optimizer->SetMaximumStepLength(10.0);
-  optimizer->SetMinimumStepLength(0.01);
-  optimizer->SetRelaxationFactor(0.7);
-  optimizer->SetNumberOfIterations(20);
-
-  // The BSpline transform has a large number of parameters, we use therefore a
-  // much larger number of samples to run this stage.
-  //
-  // Regulating the number of samples in the Metric is equivalent to performing
-  // multi-resolution registration because it is indeed a sub-sampling of the
-  // image.
-  metric2->SetNumberOfSpatialSamples(numberOfBSplineParameters * 1000);
-  std::cout << " Starting BSpline Deformable Registration" << std::endl;
-  registration2->Update();
-  std::cout << " BSpline Deformable Registration completed" << std::endl;
-  OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
-  compositeTransform->SetParameters(finalParameters);
-  // WriteTransform(compositeTransform, outputBase + "-BSpline.tfm"); // TODO: turn into output ivar
-
-
-  std::cout << " Resampling the atlas into the space of input image" << std::endl;
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
   resampleFilter->SetInput(m_AtlasLabels);
-  resampleFilter->SetTransform(affineTransform);
   resampleFilter->SetReferenceImage(inputBone1);
   resampleFilter->SetUseReferenceImage(true);
   resampleFilter->SetDefaultPixelValue(0);
-  resampleFilter->Update();
-  std::cout << " Affine Resampling complete!" << std::endl;
-  typename OutputImageType::Pointer segmentedImage = resampleFilter->GetOutput();
-  // WriteImage(segmentedImage, outputBase + "-A-label.nrrd", true); //TODO: turn into output
 
-  resampleFilter->SetTransform(compositeTransform);
+  if (m_StopAtAffine)
+  {
+    resampleFilter->SetTransform(m_AffineTransform);
+  }
+  else
+  {
+    //  Perform Deformable Registration
+    typename DeformableTransformType::Pointer bsplineTransformCoarse = DeformableTransformType::New();
+    m_FinalTransform = CompositeTransformType::New();
+    m_FinalTransform->AddTransform(m_AffineTransform);
+    m_FinalTransform->AddTransform(bsplineTransformCoarse);
+    m_FinalTransform->SetOnlyMostRecentTransformToOptimizeOn();
+
+    unsigned int numberOfGridNodesInOneDimensionCoarse = 5;
+
+    typename DeformableTransformType::PhysicalDimensionsType fixedPhysicalDimensions;
+    typename DeformableTransformType::MeshSizeType           meshSize;
+    typename DeformableTransformType::OriginType             fixedOrigin;
+
+    for (unsigned int i = 0; i < Dimension; i++)
+    {
+      fixedOrigin[i] = inputBone1->GetOrigin()[i];
+      fixedPhysicalDimensions[i] = inputBone1->GetSpacing()[i] * static_cast<double>(fixedRegion.GetSize()[i] - 1);
+    }
+    meshSize.Fill(numberOfGridNodesInOneDimensionCoarse - SplineOrder);
+
+    bsplineTransformCoarse->SetTransformDomainOrigin(fixedOrigin);
+    bsplineTransformCoarse->SetTransformDomainPhysicalDimensions(fixedPhysicalDimensions);
+    bsplineTransformCoarse->SetTransformDomainMeshSize(meshSize);
+    bsplineTransformCoarse->SetTransformDomainDirection(inputBone1->GetDirection());
+
+    using ParametersType = DeformableTransformType::ParametersType;
+
+    unsigned int numberOfBSplineParameters = bsplineTransformCoarse->GetNumberOfParameters();
+
+    optimizerScales = OptimizerScalesType(numberOfBSplineParameters);
+    optimizerScales.Fill(1.0);
+    optimizer->SetScales(optimizerScales);
+
+    ParametersType initialDeformableTransformParameters(numberOfBSplineParameters);
+    initialDeformableTransformParameters.Fill(0.0);
+    bsplineTransformCoarse->SetParameters(initialDeformableTransformParameters);
+
+    // for deformable registration part, we want actual bone intensities
+    using MetricType = itk::MeanSquaresImageToImageMetric<InputImageType, InputImageType>;
+    typename MetricType::Pointer metric2 = MetricType::New();
+    metric2->ReinitializeSeed(76926294);
+
+    using InterpolatorType = itk::LinearInterpolateImageFunction<InputImageType, double>;
+    typename InterpolatorType::Pointer interpolator2 = InterpolatorType::New();
+    using RegistrationType = itk::ImageRegistrationMethod<InputImageType, InputImageType>;
+    typename RegistrationType::Pointer registration2 = RegistrationType::New();
+    registration2->SetMetric(metric2);
+    registration2->SetOptimizer(optimizer);
+    registration2->SetInterpolator(interpolator2);
+    registration2->SetInitialTransformParameters(m_FinalTransform->GetParameters());
+    registration2->SetTransform(m_FinalTransform);
+    registration2->SetFixedImageRegion(fixedRegion);
+    registration2->SetFixedImage(inputBone1);
+    registration2->SetMovingImage(atlasBone1);
+
+    optimizer->SetMaximumStepLength(10.0);
+    optimizer->SetMinimumStepLength(0.01);
+    optimizer->SetRelaxationFactor(0.7);
+    optimizer->SetNumberOfIterations(20);
+
+    // The BSpline transform has a large number of parameters, we use therefore a
+    // much larger number of samples to run this stage.
+    //
+    // Regulating the number of samples in the Metric is equivalent to performing
+    // multi-resolution registration because it is indeed a sub-sampling of the
+    // image.
+    metric2->SetNumberOfSpatialSamples(numberOfBSplineParameters * 1000);
+    std::cout << " Starting BSpline Deformable Registration" << std::endl;
+    registration2->Update();
+    std::cout << " BSpline Deformable Registration completed" << std::endl;
+    OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
+    m_FinalTransform->SetParameters(finalParameters);
+
+    resampleFilter->SetTransform(m_FinalTransform);
+  }
+
+  // grafting pattern spares us from allocating an intermediate image
+  resampleFilter->GraftOutput(this->GetOutput());
   resampleFilter->Update();
-  std::cout << " BSpline Resampling complete!" << std::endl;
-  segmentedImage = resampleFilter->GetOutput();
-  // WriteImage(segmentedImage, outputBase + "-BS-label.nrrd", true); //TODO: turn into output
+  this->GraftOutput(resampleFilter->GetOutput());
 }
 
 } // end namespace itk
