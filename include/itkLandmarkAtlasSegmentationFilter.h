@@ -105,6 +105,9 @@ protected:
   using IndexType = typename TOutputImage::IndexType;
   using SizeType = typename TOutputImage::SizeType;
 
+  typename InputImageType::Pointer
+  Duplicate(const TInputImage * input);
+
   void
   GenerateData() override;
 

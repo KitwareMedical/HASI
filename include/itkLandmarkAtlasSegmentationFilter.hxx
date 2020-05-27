@@ -23,13 +23,12 @@
 #include "itkVersorRigid3DTransform.h"
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkSignedMaurerDistanceMapImageFilter.h"
-//#include "itkImageRegistrationMethod.h"
-//#include "itkRegularStepGradientDescentOptimizer.h"
-//#include "itkMeanSquaresImageToImageMetric.h"
-//#include "itkResampleImageFilter.h"
-//#include "itkCommand.h"
-//#include "itkBSplineResampleImageFunction.h"
-//#include "itkCompositeTransform.h"
+#include "itkImageDuplicator.h"
+#include "itkImageRegistrationMethod.h"
+#include "itkRegularStepGradientDescentOptimizer.h"
+#include "itkMeanSquaresImageToImageMetric.h"
+#include "itkCompositeTransform.h"
+#include "itkResampleImageFilter.h"
 
 namespace itk
 {
@@ -38,6 +37,17 @@ void
 LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
+}
+
+template <typename TInputImage, typename TOutputImage>
+typename TInputImage::Pointer
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::Duplicate(const TInputImage * input)
+{
+  using DuplicatorType = itk::ImageDuplicator<TInputImage>;
+  typename DuplicatorType::Pointer dup = DuplicatorType::New();
+  dup->SetInputImage(input);
+  dup->Update();
+  return dup->GetOutput();
 }
 
 template <typename TInputImage, typename TOutputImage>
@@ -77,9 +87,8 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // WriteTransform(rigidTransform, outputBase + "-landmarks.tfm"); // TODO: turn this into an output ivar
 
 
-  const InputImageType * inputBone1 = this->GetInput(0);
-  const InputImageType * atlasBone1 = this->GetInput(1);
-  // duplicator needed as we later modify them
+  typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
+  typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
 
   auto perBoneProcessing = [](typename InputImageType::Pointer  bone1,
                               typename OutputImageType::Pointer allLabels,
@@ -153,9 +162,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
 
   typename RealImageType::Pointer inputDF1 = perBoneProcessing(inputBone1, m_InputLabels, 3); // just the first bone
-  WriteImage(inputBone1, outputBase + "-bone1i.nrrd", false);
-  typename RealImageType::Pointer atlasDF1 = perBoneProcessing(atlasBone1, m_AtlasLabels, 255); // keep all atlas labels!
-  WriteImage(atlasBone1, outputBase + "-bone1a.nrrd", false);
+  // WriteImage(inputBone1, outputBase + "-bone1i.nrrd", false);
+  typename RealImageType::Pointer atlasDF1 =
+    perBoneProcessing(atlasBone1, m_AtlasLabels, 255); // keep all atlas labels!
+                                                       // WriteImage(atlasBone1, outputBase + "-bone1a.nrrd", false);
 
 
   using AffineTransformType = itk::AffineTransform<double, Dimension>;
@@ -254,9 +264,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
       {
         return;
       }
-      std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
-      std::cout << diff.count() << "  " << optimizer->GetCurrentIteration() << "  ";
-      std::cout << optimizer->GetValue() << std::endl;
+      std::cout << optimizer->GetCurrentIteration() << "  ";
     }
   };
 
@@ -264,14 +272,13 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
   optimizer->AddObserver(itk::IterationEvent(), observer);
 
-  std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Starting Rigid Registration " << std::endl;
   registration1->Update();
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Rigid Registration completed" << std::endl;
-  std::cout << "Stop condition = " << registration1->GetOptimizer()->GetStopConditionDescription() << std::endl;
+  if (this->GetDebug())
+  {
+    std::cout << "Stop condition = " << registration1->GetOptimizer()->GetStopConditionDescription() << std::endl;
+  }
   rigidTransform->SetParameters(registration1->GetLastTransformParameters());
-  WriteTransform(rigidTransform, outputBase + "-rigid.tfm");
+  // WriteTransform(rigidTransform, outputBase + "-rigid.tfm"); // TODO: turn into output ivar
 
 
   //  Perform Affine Registration
@@ -312,13 +319,11 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // image.
   metric1->SetNumberOfSpatialSamples(500000L);
 
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Starting Affine Registration" << std::endl;
+  std::cout << " Starting Affine Registration" << std::endl;
   registration1->Update();
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Affine Registration completed" << std::endl;
+  std::cout << " Affine Registration completed" << std::endl;
   affineTransform->SetParameters(registration1->GetLastTransformParameters());
-  WriteTransform(affineTransform, outputBase + "-affine.tfm");
+  // WriteTransform(affineTransform, outputBase + "-affine.tfm"); // TODO: turn into output ivar
 
   inputDF1 = nullptr; // deallocate it
   atlasDF1 = nullptr; // deallocate it
@@ -392,18 +397,15 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // multi-resolution registration because it is indeed a sub-sampling of the
   // image.
   metric2->SetNumberOfSpatialSamples(numberOfBSplineParameters * 1000);
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Starting BSpline Deformable Registration" << std::endl;
+  std::cout << " Starting BSpline Deformable Registration" << std::endl;
   registration2->Update();
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " BSpline Deformable Registration completed" << std::endl;
+  std::cout << " BSpline Deformable Registration completed" << std::endl;
   OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
   compositeTransform->SetParameters(finalParameters);
-  WriteTransform(compositeTransform, outputBase + "-BSpline.tfm");
+  // WriteTransform(compositeTransform, outputBase + "-BSpline.tfm"); // TODO: turn into output ivar
 
 
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Resampling the atlas into the space of input image" << std::endl;
+  std::cout << " Resampling the atlas into the space of input image" << std::endl;
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
   resampleFilter->SetInput(m_AtlasLabels);
@@ -412,17 +414,15 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->SetUseReferenceImage(true);
   resampleFilter->SetDefaultPixelValue(0);
   resampleFilter->Update();
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " Affine Resampling complete!" << std::endl;
+  std::cout << " Affine Resampling complete!" << std::endl;
   typename OutputImageType::Pointer segmentedImage = resampleFilter->GetOutput();
-  WriteImage(segmentedImage, outputBase + "-A-label.nrrd", true);
+  // WriteImage(segmentedImage, outputBase + "-A-label.nrrd", true); //TODO: turn into output
 
   resampleFilter->SetTransform(compositeTransform);
   resampleFilter->Update();
-  diff = std::chrono::steady_clock::now() - startTime;
-  std::cout << diff.count() << " BSpline Resampling complete!" << std::endl;
+  std::cout << " BSpline Resampling complete!" << std::endl;
   segmentedImage = resampleFilter->GetOutput();
-  WriteImage(segmentedImage, outputBase + "-BS-label.nrrd", true);
+  // WriteImage(segmentedImage, outputBase + "-BS-label.nrrd", true); //TODO: turn into output
 }
 
 } // end namespace itk
