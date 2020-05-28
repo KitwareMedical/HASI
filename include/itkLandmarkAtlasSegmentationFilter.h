@@ -77,12 +77,28 @@ public:
   using LandmarksType = std::vector<PointType>;
 
   /** Get/Set the input landmarks. */
-  itkSetMacro(InputLandmarks, LandmarksType);
-  itkGetMacro(InputLandmarks, LandmarksType);
+  virtual void
+  SetInputLandmarks(const LandmarksType landmarks)
+  {
+    if (this->m_InputLandmarks != landmarks)
+    {
+      this->m_InputLandmarks = landmarks;
+      this->Modified();
+    }
+  }
+  itkGetConstReferenceMacro(InputLandmarks, LandmarksType);
 
   /** Get/Set the atlas landmarks. */
-  itkSetMacro(AtlasLandmarks, LandmarksType);
-  itkGetMacro(AtlasLandmarks, LandmarksType);
+  virtual void
+  SetAtlasLandmarks(const LandmarksType landmarks)
+  {
+    if (this->m_AtlasLandmarks != landmarks)
+    {
+      this->m_AtlasLandmarks = landmarks;
+      this->Modified();
+    }
+  }
+  itkGetConstReferenceMacro(AtlasLandmarks, LandmarksType);
 
   using RigidTransformType = itk::VersorRigid3DTransform<double>;
 
