@@ -24,6 +24,8 @@
 #include "itkTestingMacros.h"
 #include "itkTransformFileWriter.h"
 
+#include "itkTxtTransformIOFactory.h"
+
 namespace
 {
 class ShowProgress : public itk::Command
@@ -159,6 +161,7 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   const char * atlasLandmarksFilename = argv[6];
 
   const std::string outputBase = argv[7];
+  itk::TxtTransformIOFactory::RegisterOneFactory();
 
 
   constexpr unsigned int Dimension = 3;
