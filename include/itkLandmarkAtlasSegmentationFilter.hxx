@@ -72,6 +72,8 @@ WriteTransform(const itk::Object * transform, std::string fileName)
   transformWriter->Update();
 }
 
+std::string outputBase = "C:/Dev/HASI-19/Testing/debug";
+
 template <typename TInputImage, typename TOutputImage>
 void
 LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
@@ -106,6 +108,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // and make sure that the other corresponding point maps to it perfectly
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
+  WriteTransform(m_LandmarksTransform, outputBase + "-landmarks.tfm");
 
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
   typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
@@ -185,7 +188,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // WriteImage(inputBone1, outputBase + "-bone1i.nrrd", false);
   typename RealImageType::Pointer atlasDF1 =
     perBoneProcessing(atlasBone1, m_AtlasLabels, 255); // keep all atlas labels!
-                                                       // WriteImage(atlasBone1, outputBase + "-bone1a.nrrd", false);
+  WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
 
 
   constexpr unsigned int SplineOrder = 3;
@@ -298,6 +301,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   }
   m_RigidTransform = RigidTransformType::New();
   m_RigidTransform->SetParameters(registration1->GetLastTransformParameters());
+  WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
 
 
   //  Perform Affine Registration
@@ -305,6 +309,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   m_AffineTransform->SetCenter(m_RigidTransform->GetCenter());
   m_AffineTransform->SetTranslation(m_RigidTransform->GetTranslation());
   m_AffineTransform->SetMatrix(m_RigidTransform->GetMatrix());
+  WriteTransform(m_AffineTransform, outputBase + "-affineInit.tfm"); // debug
 
   registration1->SetTransform(m_AffineTransform);
   registration1->SetInitialTransformParameters(m_AffineTransform->GetParameters());
@@ -341,6 +346,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   registration1->Update();
   std::cout << " Affine Registration completed" << std::endl;
   m_AffineTransform->SetParameters(registration1->GetLastTransformParameters());
+  WriteTransform(m_AffineTransform, outputBase + "-affine.tfm");
 
   inputDF1 = nullptr; // deallocate it
   atlasDF1 = nullptr; // deallocate it
@@ -430,6 +436,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     std::cout << " BSpline Deformable Registration completed" << std::endl;
     OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
     m_FinalTransform->SetParameters(finalParameters);
+    WriteTransform(m_FinalTransform, outputBase + "-BSpline.tfm");
 
     resampleFilter->SetTransform(m_FinalTransform);
   }
@@ -438,6 +445,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->GraftOutput(this->GetOutput());
   resampleFilter->Update();
   this->GraftOutput(resampleFilter->GetOutput());
+  WriteImage(resampleFilter->GetOutput(), outputBase + "-label.nrrd", true);
 }
 
 } // end namespace itk

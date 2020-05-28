@@ -19,6 +19,7 @@ itk_module(HASI
     # debugging
     ITKIOTransformHDF5
     ITKIOTransformInsightLegacy
+    ITKTestKernel
   COMPILE_DEPENDS
     ITKImageSources
   TEST_DEPENDS
