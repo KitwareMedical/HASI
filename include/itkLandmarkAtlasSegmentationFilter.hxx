@@ -248,12 +248,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
   optimizer->SetNumberOfIterations(200);
 
-  // The rigid transform has 6 parameters we use therefore a few samples to run
-  // this stage.
-  //
-  // Regulating the number of samples in the Metric is equivalent to performing
-  // multi-resolution registration because it is indeed a sub-sampling of the
-  // image.
+
   metric1->SetNumberOfSpatialSamples(100000L);
   // metric1->SetUseFixedImageSamplesIntensityThreshold(-1000);
 
@@ -334,12 +329,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   optimizer->SetMinimumStepLength(0.0001);
   optimizer->SetNumberOfIterations(200);
 
-  // The Affine transform has 12 parameters we use therefore a more samples to run
-  // this stage.
-  //
-  // Regulating the number of samples in the Metric is equivalent to performing
-  // multi-resolution registration because it is indeed a sub-sampling of the
-  // image.
+  // The Affine transform has 12 parameters so we use more samples to run this stage.
   metric1->SetNumberOfSpatialSamples(500000L);
 
   std::cout << " Starting Affine Registration" << std::endl;
