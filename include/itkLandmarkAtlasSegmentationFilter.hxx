@@ -116,10 +116,11 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   auto perBoneProcessing = [](typename InputImageType::Pointer  bone1,
                               typename OutputImageType::Pointer allLabels,
                               unsigned char                     howManyLabels) {
-    // bone1 and label images might have different extents (bone1 will be a strict subset)
     typename OutputImageType::RegionType bone1Region = bone1->GetBufferedRegion();
-    typename InputImageType::IndexType   index = bone1Region.GetIndex();
     typename InputImageType::PointType   p;
+    // bone1 and label images might have different extents (bone1 will be a strict subset)
+    using IndexType = typename InputImageType::IndexType;
+    IndexType index = bone1Region.GetIndex();
     bone1->TransformIndexToPhysicalPoint(index, p);
     allLabels->TransformPhysicalPointToIndex(p, index);
     itk::Offset<3> indexAdjustment = index - allLabels->GetBufferedRegion().GetIndex();
@@ -129,27 +130,61 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     bone1whole->SetRegions(bone1Region);
     bone1whole->Allocate(true);
 
+    IndexType  minInd{ bone1Region.GetSize()[0] + index[0],
+                      bone1Region.GetSize()[1] + index[1],
+                      bone1Region.GetSize()[2] + index[2] };
+    IndexType  maxInd = index;
+    std::mutex minMaxMutex;
+
     // construct whole-bone1 segmentation by ignoring other bones and the split
     // into corical and trabecular bone, and bone marrow (labels 1, 2 and 3)
     itk::MultiThreaderBase::Pointer mt = itk::MultiThreaderBase::New();
     mt->ParallelizeImageRegion<OutputImageType::ImageDimension>(
       bone1Region,
-      [bone1whole, allLabels, indexAdjustment, howManyLabels](const typename OutputImageType::RegionType region) {
+      [bone1whole, allLabels, indexAdjustment, howManyLabels, &minInd, &maxInd, &minMaxMutex, bone1Region](
+        const typename OutputImageType::RegionType region) {
         typename InputImageType::RegionType labelRegion = region;
         labelRegion.SetIndex(labelRegion.GetIndex() + indexAdjustment);
 
-        itk::ImageRegionConstIterator<OutputImageType> iIt(allLabels, labelRegion);
-        itk::ImageRegionIterator<OutputImageType>      oIt(bone1whole, region);
+        IndexType minIndThread{ bone1Region.GetSize()[0] + bone1Region.GetIndex()[0],
+                                bone1Region.GetSize()[1] + bone1Region.GetIndex()[1],
+                                bone1Region.GetSize()[2] + bone1Region.GetIndex()[2] };
+        IndexType maxIndThread = bone1Region.GetIndex();
+
+        auto updateMinMax = [](IndexType & minIndex, IndexType & maxIndex, IndexType newIndex) {
+          for (unsigned d = 0; d < Dimension; d++)
+          {
+            minIndex[d] = std::min(newIndex[d], minIndex[d]);
+            maxIndex[d] = std::max(newIndex[d], maxIndex[d]);
+          }
+        };
+
+        itk::ImageRegionConstIterator<OutputImageType>     iIt(allLabels, labelRegion);
+        itk::ImageRegionIteratorWithIndex<OutputImageType> oIt(bone1whole, region);
         for (; !oIt.IsAtEnd(); ++iIt, ++oIt)
         {
           auto label = iIt.Get();
           if (label >= 1 && label <= howManyLabels)
           {
             oIt.Set(1);
+            updateMinMax(minIndThread, maxIndThread, oIt.GetIndex());
           }
+        }
+
+        if (minIndThread[0] < maxIndThread[2]) // bounds valid, update outer min/max
+        {
+          std::lock_guard<std::mutex> lock(minMaxMutex);
+          updateMinMax(minInd, maxInd, minIndThread);
+          updateMinMax(minInd, maxInd, maxIndThread);
         }
       },
       nullptr);
+
+    bone1Region.SetIndex(minInd);
+    for (unsigned d = 0; d < Dimension; d++)
+    {
+      bone1Region.SetSize(d, maxInd[d] - minInd[d]);
+    }
 
     using RealImageType = itk::Image<float, 3>;
     using DistanceFieldType = itk::SignedMaurerDistanceMapImageFilter<OutputImageType, RealImageType>;
@@ -157,6 +192,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     distF->SetInput(bone1whole);
     distF->SetSquaredDistance(false);
     distF->SetInsideIsPositive(true);
+    distF->GetOutput()->SetRequestedRegion(bone1Region);
     distF->Update();
     typename RealImageType::Pointer distanceField = distF->GetOutput();
     distanceField->DisconnectPipeline();
@@ -185,7 +221,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
 
   typename RealImageType::Pointer inputDF1 = perBoneProcessing(inputBone1, m_InputLabels, 3); // just the first bone
-  // WriteImage(inputBone1, outputBase + "-bone1i.nrrd", false);
+  WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
   typename RealImageType::Pointer atlasDF1 =
     perBoneProcessing(atlasBone1, m_AtlasLabels, 255); // keep all atlas labels!
   WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
