@@ -500,24 +500,17 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
         {
           if (iIt.Get())
           {
-            if (cIt.Get())
+            if (cIt.Get() || bIt.Get() || mIt.Get())
             {
-              oIt.Set(3 * bone - 2);
-            }
-            else if (bIt.Get())
-            {
-              oIt.Set(3 * bone - 1);
-            }
-            else if (mIt.Get())
-            {
-              oIt.Set(3 * bone);
+              oIt.Set(1);
             }
           }
           // else this is background
         }
       },
       nullptr);
-    UpdateAndWrite(finalBones, boneFilename + "-label.nrrd", true, 2);
+    UpdateAndWrite(finalBones, outFilename + "-femur-label.nrrd", true, 0);
+    return;
   }
   UpdateAndWrite(finalBones, outFilename + "-label.nrrd", true, 0); // always write
 }
