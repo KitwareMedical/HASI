@@ -113,10 +113,11 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
   typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
 
-  auto perBoneProcessing = [](typename InputImageType::Pointer  bone1,
-                              typename OutputImageType::Pointer allLabels,
-                              unsigned char                     howManyLabels) {
-    typename OutputImageType::RegionType bone1Region = bone1->GetBufferedRegion();
+  auto perBoneProcessing = [](typename InputImageType::Pointer     bone1,
+                              typename OutputImageType::Pointer    allLabels,
+                              unsigned char                        howManyLabels,
+                              typename OutputImageType::RegionType bone1Region) {
+    bone1Region = bone1->GetBufferedRegion();
     typename InputImageType::PointType   p;
     // bone1 and label images might have different extents (bone1 will be a strict subset)
     using IndexType = typename InputImageType::IndexType;
@@ -221,11 +222,13 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     return distanceField;
   };
 
-
-  typename RealImageType::Pointer inputDF1 = perBoneProcessing(inputBone1, m_InputLabels, 3); // just the first bone
+  typename RealImageType::RegionType bone1Region;
+  typename RealImageType::Pointer    inputDF1 =
+    perBoneProcessing(inputBone1, m_InputLabels, 3, bone1Region); // just the first bone
   WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
-  typename RealImageType::Pointer atlasDF1 =
-    perBoneProcessing(atlasBone1, m_AtlasLabels, 255); // keep all atlas labels!
+  typename RealImageType::RegionType atlasRegion;
+  typename RealImageType::Pointer    atlasDF1 =
+    perBoneProcessing(atlasBone1, m_AtlasLabels, 255, atlasRegion); // keep all atlas labels!
   WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
 
 
@@ -253,8 +256,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   using IdentityTransformType = itk::IdentityTransform<double, Dimension>;
   IdentityTransformType::Pointer identityTransform = IdentityTransformType::New();
 
-  InputImageType::RegionType fixedRegion = inputBone1->GetBufferedRegion();
-  registration1->SetFixedImageRegion(fixedRegion);
+  registration1->SetFixedImageRegion(bone1Region);
   registration1->SetInitialTransformParameters(m_LandmarksTransform->GetParameters());
   registration1->SetTransform(m_LandmarksTransform);
 
@@ -408,7 +410,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     for (unsigned int i = 0; i < Dimension; i++)
     {
       fixedOrigin[i] = inputBone1->GetOrigin()[i];
-      fixedPhysicalDimensions[i] = inputBone1->GetSpacing()[i] * static_cast<double>(fixedRegion.GetSize()[i] - 1);
+      fixedPhysicalDimensions[i] = inputBone1->GetSpacing()[i] * static_cast<double>(bone1Region.GetSize()[i] - 1);
     }
     meshSize.Fill(numberOfGridNodesInOneDimensionCoarse - SplineOrder);
 
@@ -443,7 +445,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     registration2->SetInterpolator(interpolator2);
     registration2->SetInitialTransformParameters(m_FinalTransform->GetParameters());
     registration2->SetTransform(m_FinalTransform);
-    registration2->SetFixedImageRegion(fixedRegion);
+    registration2->SetFixedImageRegion(bone1Region);
     registration2->SetFixedImage(inputBone1);
     registration2->SetMovingImage(atlasBone1);
 
