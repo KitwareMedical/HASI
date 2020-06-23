@@ -193,7 +193,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     distF->SetInput(bone1whole);
     distF->SetSquaredDistance(false);
     distF->SetInsideIsPositive(true);
-    distF->GetOutput()->SetRequestedRegion(bone1Region);
+    // distF->GetOutput()->SetRequestedRegion(bone1Region);
     distF->Update();
     typename RealImageType::Pointer distanceField = distF->GetOutput();
     distanceField->DisconnectPipeline();
@@ -201,7 +201,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     bone1whole = nullptr; // deallocate it
 
     mt->ParallelizeImageRegion<3>(
-      bone1Region,
+      bone1->GetBufferedRegion(),
       [bone1, distanceField](const typename InputImageType::RegionType region) {
         itk::ImageRegionConstIterator<RealImageType> iIt(distanceField, region);
         itk::ImageRegionIterator<InputImageType>     oIt(bone1, region);
