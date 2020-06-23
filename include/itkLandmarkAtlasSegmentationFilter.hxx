@@ -50,6 +50,17 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::Duplicate(const TInp
   return dup->GetOutput();
 }
 
+template <typename TInputImage, typename TOutputImage>
+void
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::AffineFromRigid()
+{
+  m_AffineTransform = AffineTransformType::New();
+  m_AffineTransform->SetCenter(m_RigidTransform->GetCenter());
+  m_AffineTransform->SetTranslation(m_RigidTransform->GetTranslation());
+  m_AffineTransform->SetMatrix(m_RigidTransform->GetMatrix());
+  WriteTransform(m_AffineTransform, outputBase + "-affineInit.tfm"); // debug
+}
+
 template <typename TImage>
 void
 WriteImage(TImage * out, std::string filename, bool compress)
@@ -109,6 +120,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
   WriteTransform(m_LandmarksTransform, outputBase + "-landmarks.tfm");
+
 
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
   typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
@@ -210,7 +222,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
         {
           float dist = iIt.Get();
           // set pixels outside the bone to scaled distance to bone
-          // this should prevent trabecular texture from throwing registration off track
+          // this should prevent background from throwing registration off track
           if (dist < 0)
           {
             oIt.Set(dist * 1024);
@@ -259,7 +271,6 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   registration1->SetFixedImageRegion(bone1Region);
   registration1->SetInitialTransformParameters(m_LandmarksTransform->GetParameters());
   registration1->SetTransform(m_LandmarksTransform);
-
 
   //  Define optimizer normalization to compensate for different dynamic range
   //  of rotations and translations.
@@ -329,54 +340,58 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
   optimizer->AddObserver(itk::IterationEvent(), observer);
 
-  registration1->Update();
-  if (this->GetDebug())
+
+  if (true) // debugging for now
   {
-    std::cout << "Stop condition = " << registration1->GetOptimizer()->GetStopConditionDescription() << std::endl;
+    m_RigidTransform = m_LandmarksTransform;
+    this->AffineFromRigid();
   }
-  m_RigidTransform = RigidTransformType::New();
-  m_RigidTransform->SetParameters(registration1->GetLastTransformParameters());
-  WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
+  else
+  {
+    registration1->Update();
+    if (this->GetDebug())
+    {
+      std::cout << "Stop condition = " << registration1->GetOptimizer()->GetStopConditionDescription() << std::endl;
+    }
+    m_RigidTransform = RigidTransformType::New();
+    m_RigidTransform->SetParameters(registration1->GetLastTransformParameters());
+    WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
 
 
-  //  Perform Affine Registration
-  m_AffineTransform = AffineTransformType::New();
-  m_AffineTransform->SetCenter(m_RigidTransform->GetCenter());
-  m_AffineTransform->SetTranslation(m_RigidTransform->GetTranslation());
-  m_AffineTransform->SetMatrix(m_RigidTransform->GetMatrix());
-  WriteTransform(m_AffineTransform, outputBase + "-affineInit.tfm"); // debug
+    //  Perform Affine Registration
+    this->AffineFromRigid();
+    registration1->SetTransform(m_AffineTransform);
+    registration1->SetInitialTransformParameters(m_AffineTransform->GetParameters());
 
-  registration1->SetTransform(m_AffineTransform);
-  registration1->SetInitialTransformParameters(m_AffineTransform->GetParameters());
+    optimizerScales = OptimizerScalesType(m_AffineTransform->GetNumberOfParameters());
+    optimizerScales[0] = 1.0;
+    optimizerScales[1] = 1.0;
+    optimizerScales[2] = 1.0;
+    optimizerScales[3] = 1.0;
+    optimizerScales[4] = 1.0;
+    optimizerScales[5] = 1.0;
+    optimizerScales[6] = 1.0;
+    optimizerScales[7] = 1.0;
+    optimizerScales[8] = 1.0;
 
-  optimizerScales = OptimizerScalesType(m_AffineTransform->GetNumberOfParameters());
-  optimizerScales[0] = 1.0;
-  optimizerScales[1] = 1.0;
-  optimizerScales[2] = 1.0;
-  optimizerScales[3] = 1.0;
-  optimizerScales[4] = 1.0;
-  optimizerScales[5] = 1.0;
-  optimizerScales[6] = 1.0;
-  optimizerScales[7] = 1.0;
-  optimizerScales[8] = 1.0;
+    optimizerScales[9] = translationScale;
+    optimizerScales[10] = translationScale;
+    optimizerScales[11] = translationScale;
 
-  optimizerScales[9] = translationScale;
-  optimizerScales[10] = translationScale;
-  optimizerScales[11] = translationScale;
+    optimizer->SetScales(optimizerScales);
+    optimizer->SetMaximumStepLength(0.2000);
+    optimizer->SetMinimumStepLength(0.0001);
+    optimizer->SetNumberOfIterations(200);
 
-  optimizer->SetScales(optimizerScales);
-  optimizer->SetMaximumStepLength(0.2000);
-  optimizer->SetMinimumStepLength(0.0001);
-  optimizer->SetNumberOfIterations(200);
+    // The Affine transform has 12 parameters so we use more samples to run this stage.
+    metric1->SetNumberOfSpatialSamples(500000L);
 
-  // The Affine transform has 12 parameters so we use more samples to run this stage.
-  metric1->SetNumberOfSpatialSamples(500000L);
-
-  std::cout << " Starting Affine Registration" << std::endl;
-  registration1->Update();
-  std::cout << " Affine Registration completed" << std::endl;
-  m_AffineTransform->SetParameters(registration1->GetLastTransformParameters());
-  WriteTransform(m_AffineTransform, outputBase + "-affine.tfm");
+    std::cout << " Starting Affine Registration" << std::endl;
+    registration1->Update();
+    std::cout << " Affine Registration completed" << std::endl;
+    m_AffineTransform->SetParameters(registration1->GetLastTransformParameters());
+    WriteTransform(m_AffineTransform, outputBase + "-affine.tfm");
+  }
 
   inputDF1 = nullptr; // deallocate it
   atlasDF1 = nullptr; // deallocate it

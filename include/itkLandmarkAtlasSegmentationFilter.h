@@ -151,6 +151,9 @@ protected:
   Duplicate(const TInputImage * input);
 
   void
+  AffineFromRigid();
+
+  void
   GenerateData() override;
 
 private:
