@@ -113,12 +113,12 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
   typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
 
-  auto perBoneProcessing = [](typename InputImageType::Pointer     bone1,
-                              typename OutputImageType::Pointer    allLabels,
-                              unsigned char                        howManyLabels,
-                              typename OutputImageType::RegionType contentRegion) {
+  auto perBoneProcessing = [](typename InputImageType::Pointer       bone1,
+                              typename OutputImageType::Pointer      allLabels,
+                              unsigned char                          howManyLabels,
+                              typename OutputImageType::RegionType & contentRegion) {
     contentRegion = bone1->GetBufferedRegion();
-    typename InputImageType::PointType   p;
+    typename InputImageType::PointType p;
     // bone1 and label images might have different extents (bone1 will be a strict subset)
     using IndexType = typename InputImageType::IndexType;
     IndexType index = contentRegion.GetIndex();
