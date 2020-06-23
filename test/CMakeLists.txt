@@ -20,8 +20,8 @@ itk_add_test(NAME itkSegment901LTest
 itk_add_test(NAME itkLandmarkAtlasSegmentationFilterTest
   COMMAND HASITestDriver
     --compare
-    DATA{Baseline/907-L-A.nrrd}
-    ${ITK_TEST_OUTPUT_DIR}/907-L-A.nrrd
+    DATA{Baseline/901-L-A.nrrd}
+    ${ITK_TEST_OUTPUT_DIR}/901-L-A.nrrd
   itkLandmarkAtlasSegmentationFilterTest
     DATA{Input/901-L.nrrd}
     DATA{Input/907-L.nrrd}
@@ -29,7 +29,7 @@ itk_add_test(NAME itkLandmarkAtlasSegmentationFilterTest
     DATA{Input/907-L-atlas.nrrd}
     DATA{Input/901-L.fcsv}
     DATA{Input/907-L.fcsv}
-    ${ITK_TEST_OUTPUT_DIR}/907-L-
+    ${ITK_TEST_OUTPUT_DIR}/901-L-
   )
 set_tests_properties(itkLandmarkAtlasSegmentationFilterTest
     PROPERTIES DEPENDS itkSegment901LTest)

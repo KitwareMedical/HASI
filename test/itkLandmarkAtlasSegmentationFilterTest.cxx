@@ -25,6 +25,7 @@
 #include "itkTransformFileWriter.h"
 
 #include "itkTxtTransformIOFactory.h"
+#include "itkHDF5TransformIOFactory.h"
 
 namespace
 {
@@ -162,6 +163,7 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   const std::string outputBase = argv[7];
   itk::TxtTransformIOFactory::RegisterOneFactory();
+  itk::HDF5TransformIOFactory::RegisterOneFactory();
 
 
   constexpr unsigned int Dimension = 3;

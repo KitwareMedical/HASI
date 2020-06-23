@@ -238,6 +238,8 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   typename RealImageType::Pointer    inputDF1 =
     perBoneProcessing(inputBone1, m_InputLabels, 3, bone1Region); // just the first bone
   WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
+  // TODO: inputBone1=RegionOfInterest(inputBone1, bone1Region)
+
   typename RealImageType::RegionType atlasRegion;
   typename RealImageType::Pointer    atlasDF1 =
     perBoneProcessing(atlasBone1, m_AtlasLabels, 255, atlasRegion); // keep all atlas labels!
@@ -403,16 +405,13 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->SetUseReferenceImage(true);
   resampleFilter->SetDefaultPixelValue(0);
 
-  if (m_StopAtAffine)
-  {
-    resampleFilter->SetTransform(m_AffineTransform);
-  }
-  else
+  m_FinalTransform = CompositeTransformType::New();
+  m_FinalTransform->AddTransform(m_AffineTransform);
+
+  if (!m_StopAtAffine)
   {
     //  Perform Deformable Registration
     typename DeformableTransformType::Pointer bsplineTransformCoarse = DeformableTransformType::New();
-    m_FinalTransform = CompositeTransformType::New();
-    m_FinalTransform->AddTransform(m_AffineTransform);
     m_FinalTransform->AddTransform(bsplineTransformCoarse);
     m_FinalTransform->SetOnlyMostRecentTransformToOptimizeOn();
 
@@ -482,9 +481,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
     m_FinalTransform->SetParameters(finalParameters);
     WriteTransform(m_FinalTransform, outputBase + "-BSpline.tfm");
-
-    resampleFilter->SetTransform(m_FinalTransform);
   }
+
+  resampleFilter->SetTransform(m_FinalTransform);
 
   // grafting pattern spares us from allocating an intermediate image
   resampleFilter->GraftOutput(this->GetOutput());
