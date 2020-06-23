@@ -116,24 +116,24 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   auto perBoneProcessing = [](typename InputImageType::Pointer     bone1,
                               typename OutputImageType::Pointer    allLabels,
                               unsigned char                        howManyLabels,
-                              typename OutputImageType::RegionType bone1Region) {
-    bone1Region = bone1->GetBufferedRegion();
+                              typename OutputImageType::RegionType contentRegion) {
+    contentRegion = bone1->GetBufferedRegion();
     typename InputImageType::PointType   p;
     // bone1 and label images might have different extents (bone1 will be a strict subset)
     using IndexType = typename InputImageType::IndexType;
-    IndexType index = bone1Region.GetIndex();
+    IndexType index = contentRegion.GetIndex();
     bone1->TransformIndexToPhysicalPoint(index, p);
     allLabels->TransformPhysicalPointToIndex(p, index);
     itk::Offset<3> indexAdjustment = index - allLabels->GetBufferedRegion().GetIndex();
 
     typename OutputImageType::Pointer bone1whole = OutputImageType::New();
     bone1whole->CopyInformation(bone1);
-    bone1whole->SetRegions(bone1Region);
+    bone1whole->SetRegions(contentRegion);
     bone1whole->Allocate(true);
 
-    IndexType  minInd{ bone1Region.GetSize()[0] + index[0],
-                      bone1Region.GetSize()[1] + index[1],
-                      bone1Region.GetSize()[2] + index[2] };
+    IndexType  minInd{ contentRegion.GetSize()[0] + index[0],
+                      contentRegion.GetSize()[1] + index[1],
+                      contentRegion.GetSize()[2] + index[2] };
     IndexType  maxInd = index;
     std::mutex minMaxMutex;
 
@@ -141,16 +141,16 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     // into corical and trabecular bone, and bone marrow (labels 1, 2 and 3)
     itk::MultiThreaderBase::Pointer mt = itk::MultiThreaderBase::New();
     mt->ParallelizeImageRegion<OutputImageType::ImageDimension>(
-      bone1Region,
-      [bone1whole, allLabels, indexAdjustment, howManyLabels, &minInd, &maxInd, &minMaxMutex, bone1Region](
+      contentRegion,
+      [bone1whole, allLabels, indexAdjustment, howManyLabels, &minInd, &maxInd, &minMaxMutex, contentRegion](
         const typename OutputImageType::RegionType region) {
         typename InputImageType::RegionType labelRegion = region;
         labelRegion.SetIndex(labelRegion.GetIndex() + indexAdjustment);
 
-        IndexType minIndThread{ bone1Region.GetSize()[0] + bone1Region.GetIndex()[0],
-                                bone1Region.GetSize()[1] + bone1Region.GetIndex()[1],
-                                bone1Region.GetSize()[2] + bone1Region.GetIndex()[2] };
-        IndexType maxIndThread = bone1Region.GetIndex();
+        IndexType minIndThread{ contentRegion.GetSize()[0] + contentRegion.GetIndex()[0],
+                                contentRegion.GetSize()[1] + contentRegion.GetIndex()[1],
+                                contentRegion.GetSize()[2] + contentRegion.GetIndex()[2] };
+        IndexType maxIndThread = contentRegion.GetIndex();
 
         auto updateMinMax = [](IndexType & minIndex, IndexType & maxIndex, IndexType newIndex) {
           for (unsigned d = 0; d < Dimension; d++)
@@ -181,10 +181,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
       },
       nullptr);
 
-    bone1Region.SetIndex(minInd);
+    contentRegion.SetIndex(minInd);
     for (unsigned d = 0; d < Dimension; d++)
     {
-      bone1Region.SetSize(d, maxInd[d] - minInd[d]);
+      contentRegion.SetSize(d, maxInd[d] - minInd[d]);
     }
     // WriteImage(bone1whole.GetPointer(), outputBase + "-bone1-label.nrrd", true);
 
@@ -194,7 +194,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     distF->SetInput(bone1whole);
     distF->SetSquaredDistance(false);
     distF->SetInsideIsPositive(true);
-    // distF->GetOutput()->SetRequestedRegion(bone1Region);
+    // distF->GetOutput()->SetRequestedRegion(contentRegion);
     distF->Update();
     typename RealImageType::Pointer distanceField = distF->GetOutput();
     distanceField->DisconnectPipeline();
