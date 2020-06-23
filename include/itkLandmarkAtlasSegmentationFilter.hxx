@@ -171,7 +171,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
           }
         }
 
-        if (minIndThread[0] < maxIndThread[2]) // bounds valid, update outer min/max
+        if (minIndThread[0] <= maxIndThread[0]) // bounds valid, update outer min/max
         {
           std::lock_guard<std::mutex> lock(minMaxMutex);
           updateMinMax(minInd, maxInd, minIndThread);
@@ -185,6 +185,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     {
       bone1Region.SetSize(d, maxInd[d] - minInd[d]);
     }
+    // WriteImage(bone1whole.GetPointer(), outputBase + "-bone1-label.nrrd", true);
 
     using RealImageType = itk::Image<float, 3>;
     using DistanceFieldType = itk::SignedMaurerDistanceMapImageFilter<OutputImageType, RealImageType>;
@@ -196,6 +197,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     distF->Update();
     typename RealImageType::Pointer distanceField = distF->GetOutput();
     distanceField->DisconnectPipeline();
+    // WriteImage(distanceField.GetPointer(), outputBase + "-bone1DF.nrrd", false);
     bone1whole = nullptr; // deallocate it
 
     mt->ParallelizeImageRegion<3>(
