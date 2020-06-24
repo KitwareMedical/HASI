@@ -29,6 +29,7 @@
 #include "itkResampleImageFilter.h"
 
 #include "itkTransformFileWriter.h"
+#include "itkImageFileWriter.h"
 
 namespace itk
 {
