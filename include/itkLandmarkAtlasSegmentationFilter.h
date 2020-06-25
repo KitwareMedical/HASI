@@ -147,8 +147,9 @@ protected:
   using IndexType = typename TOutputImage::IndexType;
   using SizeType = typename TOutputImage::SizeType;
 
-  typename InputImageType::Pointer
-  Duplicate(const TInputImage * input);
+  template <typename TImage>
+  typename TImage::Pointer
+  Duplicate(const TImage * input, const RegionType subRegion);
 
   void
   AffineFromRigid();

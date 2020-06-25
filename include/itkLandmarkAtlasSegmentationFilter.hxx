@@ -22,11 +22,13 @@
 
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkSignedMaurerDistanceMapImageFilter.h"
-#include "itkImageDuplicator.h"
+#include "itkRegionOfInterestImageFilter.h"
 #include "itkImageRegistrationMethod.h"
 #include "itkRegularStepGradientDescentOptimizer.h"
 #include "itkMeanSquaresImageToImageMetric.h"
 #include "itkResampleImageFilter.h"
+#include "itkBinaryFillholeImageFilter.h"
+
 
 #include "itkTransformFileWriter.h"
 #include "itkImageFileWriter.h"
@@ -44,14 +46,16 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::PrintSelf(std::ostre
 }
 
 template <typename TInputImage, typename TOutputImage>
-typename TInputImage::Pointer
-LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::Duplicate(const TInputImage * input)
+template <typename TImage>
+typename TImage::Pointer
+LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::Duplicate(const TImage * input, const RegionType subRegion)
 {
-  using DuplicatorType = itk::ImageDuplicator<TInputImage>;
-  typename DuplicatorType::Pointer dup = DuplicatorType::New();
-  dup->SetInputImage(input);
-  dup->Update();
-  return dup->GetOutput();
+  using DuplicatorType = itk::RegionOfInterestImageFilter<TImage, TImage>;
+  typename DuplicatorType::Pointer roi = DuplicatorType::New();
+  roi->SetInput(input);
+  roi->SetRegionOfInterest(subRegion);
+  roi->Update();
+  return roi->GetOutput();
 }
 
 template <typename TInputImage, typename TOutputImage>
@@ -130,13 +134,14 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   }
 
 
-  typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
-  typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1));
+  typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0), inputRegion);
+  typename InputImageType::Pointer atlasBone1 = this->Duplicate(this->GetInput(1), inputRegion);
 
   auto perBoneProcessing = [](typename InputImageType::Pointer       bone1,
                               typename OutputImageType::Pointer      allLabels,
                               unsigned char                          howManyLabels,
-                              typename OutputImageType::RegionType & contentRegion) {
+                              typename OutputImageType::RegionType & contentRegion,
+                              bool                                   fillHoles) {
     contentRegion = bone1->GetBufferedRegion();
     typename InputImageType::PointType p;
     // bone1 and label images might have different extents (bone1 will be a strict subset)
@@ -151,9 +156,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     bone1whole->SetRegions(contentRegion);
     bone1whole->Allocate(true);
 
-    IndexType  minInd{ static_cast< IndexValueType >( contentRegion.GetSize()[0] ) + index[0],
-                       static_cast< IndexValueType >( contentRegion.GetSize()[1] ) + index[1],
-                       static_cast< IndexValueType >( contentRegion.GetSize()[2] ) + index[2] };
+    IndexType  minInd{ static_cast<IndexValueType>(contentRegion.GetSize()[0]) + index[0],
+                      static_cast<IndexValueType>(contentRegion.GetSize()[1]) + index[1],
+                      static_cast<IndexValueType>(contentRegion.GetSize()[2]) + index[2] };
     IndexType  maxInd = index;
     std::mutex minMaxMutex;
 
@@ -167,9 +172,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
         typename InputImageType::RegionType labelRegion = region;
         labelRegion.SetIndex(labelRegion.GetIndex() + indexAdjustment);
 
-        IndexType minIndThread{ static_cast< IndexValueType >( contentRegion.GetSize()[0] ) + contentRegion.GetIndex()[0],
-                                static_cast< IndexValueType >( contentRegion.GetSize()[1] ) + contentRegion.GetIndex()[1],
-                                static_cast< IndexValueType >( contentRegion.GetSize()[2] ) + contentRegion.GetIndex()[2] };
+        IndexType minIndThread{ static_cast<IndexValueType>(contentRegion.GetSize()[0]) + contentRegion.GetIndex()[0],
+                                static_cast<IndexValueType>(contentRegion.GetSize()[1]) + contentRegion.GetIndex()[1],
+                                static_cast<IndexValueType>(contentRegion.GetSize()[2]) + contentRegion.GetIndex()[2] };
         IndexType maxIndThread = contentRegion.GetIndex();
 
         auto updateMinMax = [](IndexType & minIndex, IndexType & maxIndex, IndexType newIndex) {
@@ -206,7 +211,20 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     {
       contentRegion.SetSize(d, maxInd[d] - minInd[d]);
     }
-    // WriteImage(bone1whole.GetPointer(), outputBase + "-bone1-label.nrrd", true);
+    WriteImage(bone1whole.GetPointer(), outputBase + "-bone1-label.nrrd", true);
+
+    if (fillHoles)
+    {
+      using HoleFillType = itk::BinaryFillholeImageFilter<OutputImageType>;
+      typename HoleFillType::Pointer holeFiller = HoleFillType::New();
+      holeFiller->SetInput(bone1whole);
+      holeFiller->SetForegroundValue(1);
+      // holeFiller->SetFullyConnected(false); // this is the default
+      holeFiller->Update();
+      bone1whole = holeFiller->GetOutput();
+      bone1whole->DisconnectPipeline();
+      WriteImage(bone1whole.GetPointer(), outputBase + "-bone1filled-label.nrrd", true);
+    }
 
     using RealImageType = itk::Image<float, 3>;
     using DistanceFieldType = itk::SignedMaurerDistanceMapImageFilter<OutputImageType, RealImageType>;
@@ -218,7 +236,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     distF->Update();
     typename RealImageType::Pointer distanceField = distF->GetOutput();
     distanceField->DisconnectPipeline();
-    // WriteImage(distanceField.GetPointer(), outputBase + "-bone1DF.nrrd", false);
+    WriteImage(distanceField.GetPointer(), outputBase + "-bone1DF.nrrd", false);
     bone1whole = nullptr; // deallocate it
 
     mt->ParallelizeImageRegion<3>(
@@ -244,21 +262,26 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
   typename RealImageType::RegionType bone1Region;
   typename RealImageType::Pointer    inputDF1 =
-    perBoneProcessing(inputBone1, m_InputLabels, 3, bone1Region); // just the first bone
+    perBoneProcessing(inputBone1, m_InputLabels, 3, bone1Region, false); // just the first bone
+  WriteImage(inputDF1.GetPointer(), outputBase + "-inputDF1.nrrd", false);
 
   if (this->GetDebug())
   {
     WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
   }
-  // TODO: inputBone1=RegionOfInterest(inputBone1, bone1Region)
+  inputDF1 = this->Duplicate<RealImageType>(inputDF1, bone1Region);
+  WriteImage(inputDF1.GetPointer(), outputBase + "-inputDF1.nrrd", false);
 
   typename RealImageType::RegionType atlasRegion;
-  typename RealImageType::Pointer    atlasDF1 =
-    perBoneProcessing(atlasBone1, m_AtlasLabels, 255, atlasRegion); // keep all atlas labels!
+  typename RealImageType::Pointer    atlasDF1 = perBoneProcessing(
+    atlasBone1, m_AtlasLabels, 255, atlasRegion, true); // keep all atlas labels and fill possible holes
+  WriteImage(atlasDF1.GetPointer(), outputBase + "-atlasDF1.nrrd", false);
   if (this->GetDebug())
   {
     WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
   }
+  atlasDF1 = this->Duplicate<RealImageType>(atlasDF1, atlasRegion);
+  WriteImage(atlasDF1.GetPointer(), outputBase + "-atlasDF1.nrrd", false);
 
 
   constexpr unsigned int SplineOrder = 3;
@@ -279,13 +302,14 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   registration1->SetOptimizer(optimizer);
   registration1->SetInterpolator(interpolator1);
   registration1->SetFixedImage(inputDF1);
+  registration1->SetFixedImageRegion(bone1Region);
   registration1->SetMovingImage(atlasDF1);
 
   // Auxiliary identity transform.
   using IdentityTransformType = typename itk::IdentityTransform<double, Dimension>;
   typename IdentityTransformType::Pointer identityTransform = IdentityTransformType::New();
 
-  registration1->SetFixedImageRegion(bone1Region);
+  // registration1->SetFixedImageRegion(bone1Region);
   registration1->SetInitialTransformParameters(m_LandmarksTransform->GetParameters());
   registration1->SetTransform(m_LandmarksTransform);
 
@@ -349,7 +373,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
       {
         return;
       }
-      std::cout << optimizer->GetCurrentIteration() << "  ";
+      std::cout << optimizer->GetCurrentIteration() << ": " << optimizer->GetValue() << "\n";
     }
   };
 
@@ -358,13 +382,15 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   optimizer->AddObserver(itk::IterationEvent(), observer);
 
 
-  if (true) // debugging for now
+  if (false) // debugging
   {
     m_RigidTransform = m_LandmarksTransform;
     this->AffineFromRigid();
   }
   else
   {
+    registration1->Initialize();
+    std::cout << "m_LandmarksTransform: " << metric1->GetValue(m_LandmarksTransform->GetParameters()) << std::endl;
     registration1->Update();
     if (this->GetDebug())
     {
@@ -376,6 +402,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     {
       WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
     }
+    std::cout << "m_RigidTransform: " << metric1->GetValue(m_RigidTransform->GetParameters()) << std::endl;
 
 
     //  Perform Affine Registration
@@ -405,6 +432,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 
     // The Affine transform has 12 parameters so we use more samples to run this stage.
     metric1->SetNumberOfSpatialSamples(500000L);
+
+    registration1->Initialize();
+    std::cout << "m_AffineTransform: " << metric1->GetValue(m_AffineTransform->GetParameters()) << std::endl;
 
     std::cout << " Starting Affine Registration" << std::endl;
     registration1->Update();
@@ -480,7 +510,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     registration2->SetInterpolator(interpolator2);
     registration2->SetInitialTransformParameters(m_FinalTransform->GetParameters());
     registration2->SetTransform(m_FinalTransform);
-    registration2->SetFixedImageRegion(bone1Region);
+    // registration2->SetFixedImageRegion(bone1Region);
     registration2->SetFixedImage(inputBone1);
     registration2->SetMovingImage(atlasBone1);
 
