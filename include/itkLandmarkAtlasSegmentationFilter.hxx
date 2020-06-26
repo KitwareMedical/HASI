@@ -31,6 +31,9 @@
 #include "itkTransformFileWriter.h"
 #include "itkImageFileWriter.h"
 
+std::string outputBase = "/tmp/HASI";
+
+
 namespace itk
 {
 template <typename TInputImage, typename TOutputImage>
@@ -83,8 +86,6 @@ WriteTransform(const itk::Object * transform, std::string fileName)
   transformWriter->SetFileName(fileName);
   transformWriter->Update();
 }
-
-std::string outputBase = "C:/Dev/HASI-19/Testing/debug";
 
 template <typename TInputImage, typename TOutputImage>
 void
@@ -144,9 +145,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     bone1whole->SetRegions(contentRegion);
     bone1whole->Allocate(true);
 
-    IndexType  minInd{ contentRegion.GetSize()[0] + index[0],
-                      contentRegion.GetSize()[1] + index[1],
-                      contentRegion.GetSize()[2] + index[2] };
+    IndexType  minInd{ static_cast< IndexValueType >( contentRegion.GetSize()[0] ) + index[0],
+                       static_cast< IndexValueType >( contentRegion.GetSize()[1] ) + index[1],
+                       static_cast< IndexValueType >( contentRegion.GetSize()[2] ) + index[2] };
     IndexType  maxInd = index;
     std::mutex minMaxMutex;
 
@@ -160,9 +161,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
         typename InputImageType::RegionType labelRegion = region;
         labelRegion.SetIndex(labelRegion.GetIndex() + indexAdjustment);
 
-        IndexType minIndThread{ contentRegion.GetSize()[0] + contentRegion.GetIndex()[0],
-                                contentRegion.GetSize()[1] + contentRegion.GetIndex()[1],
-                                contentRegion.GetSize()[2] + contentRegion.GetIndex()[2] };
+        IndexType minIndThread{ static_cast< IndexValueType >( contentRegion.GetSize()[0] ) + contentRegion.GetIndex()[0],
+                                static_cast< IndexValueType >( contentRegion.GetSize()[1] ) + contentRegion.GetIndex()[1],
+                                static_cast< IndexValueType >( contentRegion.GetSize()[2] ) + contentRegion.GetIndex()[2] };
         IndexType maxIndThread = contentRegion.GetIndex();
 
         auto updateMinMax = [](IndexType & minIndex, IndexType & maxIndex, IndexType newIndex) {
@@ -268,8 +269,8 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   registration1->SetMovingImage(atlasDF1);
 
   // Auxiliary identity transform.
-  using IdentityTransformType = itk::IdentityTransform<double, Dimension>;
-  IdentityTransformType::Pointer identityTransform = IdentityTransformType::New();
+  using IdentityTransformType = typename itk::IdentityTransform<double, Dimension>;
+  typename IdentityTransformType::Pointer identityTransform = IdentityTransformType::New();
 
   registration1->SetFixedImageRegion(bone1Region);
   registration1->SetInitialTransformParameters(m_LandmarksTransform->GetParameters());
@@ -340,7 +341,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   };
 
   // Create the Command observer and register it with the optimizer.
-  CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
+  typename CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
   optimizer->AddObserver(itk::IterationEvent(), observer);
 
 
@@ -400,7 +401,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   atlasDF1 = nullptr; // deallocate it
 
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
-  ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
+  typename ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
   resampleFilter->SetInput(m_AtlasLabels);
   resampleFilter->SetReferenceImage(inputBone1);
   resampleFilter->SetUseReferenceImage(true);
@@ -434,7 +435,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     bsplineTransformCoarse->SetTransformDomainMeshSize(meshSize);
     bsplineTransformCoarse->SetTransformDomainDirection(inputBone1->GetDirection());
 
-    using ParametersType = DeformableTransformType::ParametersType;
+    using ParametersType = typename DeformableTransformType::ParametersType;
 
     unsigned int numberOfBSplineParameters = bsplineTransformCoarse->GetNumberOfParameters();
 
