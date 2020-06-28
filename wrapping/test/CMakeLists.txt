@@ -1,0 +1,2 @@
+itk_python_expression_add_test(NAME itkSegmentBonesInMicroCTFilterPythonTest EXPRESSION "itkSegmentBonesInMicroCTFilter = itk.SegmentBonesInMicroCTFilter.New()")
+itk_python_expression_add_test(NAME itkLandmarkAtlasSegmentationFilterPythonTest EXPRESSION "itkLandmarkAtlasSegmentationFilter = itk.LandmarkAtlasSegmentationFilter.New()")
