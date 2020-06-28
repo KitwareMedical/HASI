@@ -45,6 +45,8 @@ jobs:
         git clone https://github.com/InsightSoftwareConsortium/ITK.git
         cd ITK
         git checkout ${{ matrix.itk-git-tag }}
+        cd ..
+        git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement.git
 
     - name: Build ITK
       if: matrix.os != 'windows-2019'
@@ -53,6 +55,11 @@ jobs:
         mkdir ITK-build
         cd ITK-build
         cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja ../ITK
+        ninja
+        cd ..
+        mkdir ITKBoneEnhancement-build
+        cd ITKBoneEnhancement-build
+        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja -DITK_DIR=../ITK-build ../ITKBoneEnhancement
         ninja
 
     - name: Build ITK
@@ -63,6 +70,11 @@ jobs:
         cd ITK-build
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja ../ITK
+        ninja
+        cd ..
+        mkdir ITKBoneEnhancement-build
+        cd ITKBoneEnhancement-build
+        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja -DITK_DIR=../ITK-build ../ITKBoneEnhancement
         ninja
       shell: cmd
 
@@ -130,7 +142,7 @@ jobs:
       matrix:
         python-version: [35, 36, 37, 38]
         include:
-          - itk-python-git-tag: "v5.1.0"
+          - itk-python-git-tag: "v5.1.0.post3"
 
     steps:
     - uses: actions/checkout@v2
@@ -152,7 +164,15 @@ jobs:
     - name: 'Build 🐍 Python 📦 package'
       run: |
         export ITK_PACKAGE_VERSION=${{ matrix.itk-python-git-tag }}
+        git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement
+        mv ./dockcross-manylinux-download-cache-and-build-module-wheels.sh ./ITKBoneEnhancement
+        pushd ITKBoneEnhancement
         ./dockcross-manylinux-download-cache-and-build-module-wheels.sh cp${{ matrix.python-version }}
+        popd
+        cp ITKBoneEnhancement/include/* include/
+        ln -s $(pwd)/ITKBoneEnhancement/ITKPythonPackage .
+        ln -s $(pwd)/ITKBoneEnhancement/tools .
+        ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp${{ matrix.python-version }}
 
     - name: Publish Python package as GitHub Artifact
       uses: actions/upload-artifact@v1
@@ -166,7 +186,7 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-          - itk-python-git-tag: "v5.1.0"
+          - itk-python-git-tag: "v5.1.0.post3"
 
     steps:
     - uses: actions/checkout@v2
@@ -180,7 +200,13 @@ jobs:
       run: |
         export ITK_PACKAGE_VERSION=${{ matrix.itk-python-git-tag }}
         export MACOSX_DEPLOYMENT_TARGET=10.9
+        git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement
+        cp ./macpython-download-cache-and-build-module-wheels.sh ITKBoneEnhancement/
+        pushd ITKBoneEnhancement
         ./macpython-download-cache-and-build-module-wheels.sh
+        popd
+        cp ITKBoneEnhancement/include/* include/
+        /Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-build-module-wheels.sh
 
     - name: Publish Python package as GitHub Artifact
       uses: actions/upload-artifact@v1
@@ -195,12 +221,10 @@ jobs:
       matrix:
         python-version-minor: [5, 6, 7, 8]
         include:
-          - itk-python-git-tag: "v5.1.0"
+          - itk-python-git-tag: "v5.1.0.post3"
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        path: "im"
 
     - name: 'Install Python'
       run: |
@@ -211,30 +235,32 @@ jobs:
     - name: 'Fetch build dependencies'
       shell: bash
       run: |
-        mv im ../../
-        cd ../../
         curl -L "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${{ matrix.itk-python-git-tag }}/ITKPythonBuilds-windows.zip" -o "ITKPythonBuilds-windows.zip"
         7z x ITKPythonBuilds-windows.zip -o/c/P -aoa -r
         curl -L "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -o "doxygen-1.8.11.windows.bin.zip"
         7z x doxygen-1.8.11.windows.bin.zip -o/c/P/doxygen -aoa -r
         curl -L "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -o "grep-win.zip"
         7z x grep-win.zip -o/c/P/grep -aoa -r
+        git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement
 
     - name: 'Build 🐍 Python 📦 package'
       shell: cmd
       run: |
-        cd ../../im
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         set PATH="C:\P\grep;%PATH%"
         set CC=cl.exe
         set CXX=cl.exe
-        C:\Python3${{ matrix.python-version-minor }}-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py --py-envs "3${{ matrix.python-version-minor }}-x64" --no-cleanup
+        cd ITKBoneEnhancement
+        C:\Python3${{ matrix.python-version-minor }}-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py --py-envs "3${{ matrix.python-version-minor }}-x64"
+        cd ..
+        copy ITKBoneEnhancement/include/* include/
+        C:\Python3${{ matrix.python-version-minor }}-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py --py-envs "3${{ matrix.python-version-minor }}-x64"
 
     - name: Publish Python package as GitHub Artifact
       uses: actions/upload-artifact@v1
       with:
         name: WindowWheel3.${{ matrix.python-version-minor }}
-        path: ../../im/dist
+        path: dist
 
   publish-python-packages-to-pypi:
     needs:
