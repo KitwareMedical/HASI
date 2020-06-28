@@ -5,6 +5,8 @@ High-throughput Applications for Skeletal Imaging
 ![Build Status](https://github.com/KitwareMedical/HASI/workflows/Build,%20test,%20package/badge.svg)
 [![PyPI](https://img.shields.io/pypi/v/itk-hasi.svg)](https://pypi.python.org/pypi/itk-hasi)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/KitwareMedical/HASI/blob/master/LICENSE)
+[![DOI](https://zenodo.org/badge/213758778.svg)](https://zenodo.org/badge/latestdoi/213758778)
+
 
 Web browser-based High-Throughput Applications for Skeletal Imaging (HASI).
 Automated biomarker computation pipeline, visualization tools, and data
