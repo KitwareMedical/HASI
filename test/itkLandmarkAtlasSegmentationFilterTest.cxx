@@ -76,9 +76,7 @@ readSlicerFiducials(std::string fileName)
       __FILE__, __LINE__, "Fiducials file with IJK coordinates is not supported", __FUNCTION__);
   else
   {
-    //throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
-    // Assume created with a legacy version of Slicer, so RAS
-    ras = true;
+    throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
   }
   std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
 
