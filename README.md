@@ -2,6 +2,8 @@
 
 High-throughput Applications for Skeletal Imaging
 
+![HASI Logo](./hasi-logo.jpg)
+
 ![Build Status](https://github.com/KitwareMedical/HASI/workflows/Build,%20test,%20package/badge.svg)
 [![PyPI](https://img.shields.io/pypi/v/itk-hasi.svg)](https://pypi.python.org/pypi/itk-hasi)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/KitwareMedical/HASI/blob/master/LICENSE)
