@@ -26,23 +26,24 @@ find_package(ITK 5 REQUIRED
     ITKIOTransformHDF5
     ITKSpatialObjects
     BoneEnhancement
+    Cuberille
     ITKIOMeta
     ITKIONRRD
     )
 include(${ITK_USE_FILE})
 
 add_executable(segmentBonesInMicroCT segmentBonesInMicroCT.cxx)
-add_executable(registerAndTransferLabels registerAndTransferLabels.cxx)
+add_executable(normalizedPoseMesh normalizedPoseMesh.cxx)
 
 target_link_libraries(segmentBonesInMicroCT ${ITK_LIBRARIES})
-target_link_libraries(registerAndTransferLabels ${ITK_LIBRARIES})
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT segmentBonesInMicroCT)
+target_link_libraries(normalizedPoseMesh ${ITK_LIBRARIES})
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT normalizedPoseMesh)
 
 set(INSTALL_RUNTIME_DESTINATION bin CACHE STRING "Install destination")
 
 install(
   TARGETS
     segmentBonesInMicroCT
-    registerAndTransferLabels
+    normalizedPoseMesh
   DESTINATION ${INSTALL_RUNTIME_DESTINATION}
   )
