@@ -2,19 +2,13 @@
 #include <iostream>
 
 #include "itkImageFileReader.h"
-#include "itkImageFileWriter.h"
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkTransformFileWriter.h"
-
-#include "itkImageRegistrationMethod.h"
-#include "itkRegularStepGradientDescentOptimizer.h"
-#include "itkMeanSquaresImageToImageMetric.h"
-#include "itkResampleImageFilter.h"
-#include "itkCommand.h"
-#include "itkBSplineResampleImageFunction.h"
-#include "itkCompositeTransform.h"
-#include "itkSignedMaurerDistanceMapImageFilter.h"
-#include "itkImageMaskSpatialObject.h"
+#include "itkConstantPadImageFilter.h"
+#include "itkQuadEdgeMesh.h"
+#include "itkCuberilleImageToMeshFilter.h"
+#include "itkTransformMeshFilter.h"
+#include "itkMeshFileWriter.h"
 
 auto startTime = std::chrono::steady_clock::now();
 
@@ -37,14 +31,14 @@ ReadImage(std::string filename)
   return out;
 }
 
-template <typename TImage>
+template <typename TMesh>
 void
-WriteImage(itk::SmartPointer<TImage> out, std::string filename, bool compress)
+WriteMesh(itk::SmartPointer<TMesh> out, std::string filename, bool compress)
 {
   std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Writing " << filename << std::endl;
 
-  using WriterType = itk::ImageFileWriter<TImage>;
+  using WriterType = itk::MeshFileWriter<TMesh>;
   typename WriterType::Pointer w = WriterType::New();
   w->SetInput(out);
   w->SetFileName(filename);
@@ -120,57 +114,19 @@ readSlicerFiducials(std::string fileName)
 }
 
 
-class CommandIterationUpdate : public itk::Command
-{
-public:
-  using Self = CommandIterationUpdate;
-  using Superclass = itk::Command;
-  using Pointer = itk::SmartPointer<Self>;
-  itkNewMacro(Self);
-
-protected:
-  CommandIterationUpdate() = default;
-
-public:
-  using OptimizerType = itk::RegularStepGradientDescentOptimizer;
-  using OptimizerPointer = const OptimizerType *;
-
-  void
-  Execute(itk::Object * caller, const itk::EventObject & event) override
-  {
-    Execute((const itk::Object *)caller, event);
-  }
-
-  void
-  Execute(const itk::Object * object, const itk::EventObject & event) override
-  {
-    auto optimizer = static_cast<OptimizerPointer>(object);
-    if (!(itk::IterationEvent().CheckEvent(&event)))
-    {
-      return;
-    }
-    std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
-    std::cout << diff.count() << "  " << optimizer->GetCurrentIteration() << "  ";
-    std::cout << optimizer->GetValue() << std::endl;
-  }
-};
-
 template <typename ImageType>
 void
-mainProcessing(std::string inputBase, std::string outputBase, std::string atlasBase)
+mainProcessing(std::string inputBase, std::string poseFile, std::string outputBase)
 {
   constexpr unsigned Dimension = ImageType::ImageDimension;
   using LabelImageType = itk::Image<unsigned char, Dimension>;
-  using RealImageType = itk::Image<float, 3>;
-  using RegionType = typename LabelImageType::RegionType;
-  using IndexType = typename LabelImageType::IndexType;
   using SizeType = typename LabelImageType::SizeType;
   using PointType = typename ImageType::PointType;
   using RigidTransformType = itk::VersorRigid3DTransform<double>;
   typename RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
 
   std::vector<PointType> inputLandmarks = readSlicerFiducials(inputBase + ".fcsv");
-  std::vector<PointType> atlasLandmarks = readSlicerFiducials(atlasBase + ".fcsv");
+  std::vector<PointType> atlasLandmarks = readSlicerFiducials(poseFile);
   itkAssertOrThrowMacro(inputLandmarks.size() == 3, "There must be exactly 3 input landmarks");
   itkAssertOrThrowMacro(atlasLandmarks.size() == 3, "There must be exactly 3 atlas landmarks");
 
@@ -193,8 +149,42 @@ mainProcessing(std::string inputBase, std::string outputBase, std::string atlasB
 
   WriteTransform(rigidTransform, outputBase + "-landmarks.tfm");
 
-  typename LabelImageType::Pointer inputLabels = ReadImage<LabelImageType>(inputBase + "-label.nrrd");
+  std::string fileName = inputBase + "-femur-label.nrrd";
 
+  typename LabelImageType::Pointer inputLabels = ReadImage<LabelImageType>(fileName);
+  SizeType                         padding;
+  padding.Fill(1);
+  using PadType = itk::ConstantPadImageFilter<LabelImageType, LabelImageType>;
+  typename PadType::Pointer pad = PadType::New();
+  pad->SetInput(inputLabels);
+  pad->SetPadUpperBound(padding);
+  pad->SetPadLowerBound(padding);
+  pad->SetConstant(0);
+  pad->Update();
+
+  std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
+  std::cout << diff.count() << " Executing cuberille filter on " << fileName << std::endl;
+  using TMesh = itk::QuadEdgeMesh<double, Dimension>;
+  using TExtract = itk::CuberilleImageToMeshFilter<LabelImageType, TMesh>;
+  typename TExtract::Pointer extract = TExtract::New();
+  extract->SetInput(pad->GetOutput());
+  extract->Update();
+  diff = std::chrono::steady_clock::now() - startTime;
+  std::cout << diff.count() << " Done!" << std::endl;
+
+  WriteMesh<TMesh>(extract->GetOutput(), outputBase + "-mesh.obj", false);
+
+  typename RigidTransformType::Pointer inverseTransform = RigidTransformType::New();
+  rigidTransform->GetInverse(inverseTransform);
+  using MeshTransformType = itk::TransformMeshFilter<TMesh, TMesh, RigidTransformType>;
+  typename MeshTransformType::Pointer filter = MeshTransformType::New();
+  filter->SetInput(extract->GetOutput());
+  filter->SetTransform(inverseTransform);
+  filter->Update();
+  WriteMesh<TMesh>(filter->GetOutput(), outputBase + "-mesh.vtk", false);
+
+  diff = std::chrono::steady_clock::now() - startTime;
+  std::cout << diff.count() << " All done!" << std::endl;
 }
 
 int
@@ -203,7 +193,7 @@ main(int argc, char * argv[])
   if (argc < 4)
   {
     std::cerr << "Usage:\n" << argv[0];
-    std::cerr << " <InputBase> <OutputBase> <AtlasBase>" << std::endl;
+    std::cerr << " <InputBase> <pose.fcsv> <OutputBase>" << std::endl;
     return EXIT_FAILURE;
   }
 

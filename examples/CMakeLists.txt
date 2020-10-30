@@ -27,8 +27,12 @@ find_package(ITK 5 REQUIRED
     ITKSpatialObjects
     BoneEnhancement
     Cuberille
+    ITKMesh
+    ITKIOMeshBase
     ITKIOMeta
     ITKIONRRD
+    ITKIOMeshOBJ
+    ITKIOMeshVTK
     )
 include(${ITK_USE_FILE})
 
