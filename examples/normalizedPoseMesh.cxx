@@ -3,6 +3,7 @@
 
 #include "itkImageFileReader.h"
 #include "itkLandmarkBasedTransformInitializer.h"
+#include "itkImageFileWriter.h"
 #include "itkTransformFileWriter.h"
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkConstantPadImageFilter.h"
@@ -30,6 +31,24 @@ ReadImage(std::string filename)
   diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Done!" << std::endl;
   return out;
+}
+
+template <typename TImage>
+void
+WriteImage(itk::SmartPointer<TImage> out, std::string filename, bool compress)
+{
+  std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
+  std::cout << diff.count() << " Writing " << filename << std::endl;
+
+  using WriterType = itk::ImageFileWriter<TImage>;
+  typename WriterType::Pointer w = WriterType::New();
+  w->SetInput(out);
+  w->SetFileName(filename);
+  w->SetUseCompression(compress);
+  w->Update();
+
+  diff = std::chrono::steady_clock::now() - startTime;
+  std::cout << diff.count() << " Done!" << std::endl;
 }
 
 template <typename TMesh>
@@ -171,6 +190,7 @@ mainProcessing(std::string inputBase, std::string poseFile, std::string outputBa
     }
     ++it;
   }
+  WriteImage(inputLabels, inputBase + "-femur-label-cropped.nrrd", true);
 
   SizeType padding;
   padding.Fill(1);
