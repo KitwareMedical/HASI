@@ -4,6 +4,7 @@
 #include "itkImageFileReader.h"
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkTransformFileWriter.h"
+#include "itkImageRegionIteratorWithIndex.h"
 #include "itkConstantPadImageFilter.h"
 #include "itkQuadEdgeMesh.h"
 #include "itkCuberilleImageToMeshFilter.h"
@@ -148,11 +149,30 @@ mainProcessing(std::string inputBase, std::string poseFile, std::string outputBa
   rigidTransform->SetTranslation(inputLandmarks.front() - atlasLandmarks.front());
 
   WriteTransform(rigidTransform, outputBase + "-landmarks.tfm");
+  typename RigidTransformType::Pointer inverseTransform = RigidTransformType::New();
+  rigidTransform->GetInverse(inverseTransform);
 
   std::string fileName = inputBase + "-femur-label.nrrd";
 
   typename LabelImageType::Pointer inputLabels = ReadImage<LabelImageType>(fileName);
-  SizeType                         padding;
+
+  // crop the pixel data to cutplane at 2.5 mm from origin along X (left-right) axis
+  itk::ImageRegionIteratorWithIndex<LabelImageType> it(inputLabels, inputLabels->GetBufferedRegion());
+  while (!it.IsAtEnd())
+  {
+    if (it.Get()) // only examine foreground voxels
+    {
+      PointType p = inputLabels->TransformIndexToPhysicalPoint<double>(it.GetIndex());
+      p = inverseTransform->TransformPoint(p);
+      if (p[0] > 2.5) // needs to be removed
+      {
+        it.Set(0);
+      }
+    }
+    ++it;
+  }
+
+  SizeType padding;
   padding.Fill(1);
   using PadType = itk::ConstantPadImageFilter<LabelImageType, LabelImageType>;
   typename PadType::Pointer pad = PadType::New();
@@ -174,8 +194,6 @@ mainProcessing(std::string inputBase, std::string poseFile, std::string outputBa
 
   WriteMesh<TMesh>(extract->GetOutput(), outputBase + "-mesh.obj", false);
 
-  typename RigidTransformType::Pointer inverseTransform = RigidTransformType::New();
-  rigidTransform->GetInverse(inverseTransform);
   using MeshTransformType = itk::TransformMeshFilter<TMesh, TMesh, RigidTransformType>;
   typename MeshTransformType::Pointer filter = MeshTransformType::New();
   filter->SetInput(extract->GetOutput());
