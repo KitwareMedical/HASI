@@ -75,7 +75,9 @@ readSlicerFiducials(std::string fileName)
     throw itk::ExceptionObject(
       __FILE__, __LINE__, "Fiducials file with IJK coordinates is not supported", __FUNCTION__);
   else
+  {
     throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
+  }
   std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
 
   std::vector<PointType> points;
@@ -201,14 +203,14 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   filter->SetAtlasLandmarks(atlasLandmarks);
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetLandmarksTransform(), outputBase + "L.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetRigidTransform(), outputBase + "R.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), outputBase + "A.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "A.nrrd", true));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetLandmarksTransform(), outputBase + "LandmarksTransform.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetRigidTransform(), outputBase + "RigidTransform.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), outputBase + "AffineTransform.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "AffineTransformed.nrrd", true));
   filter->SetStopAtAffine(false);
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetFinalTransform(), outputBase + "BS.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "BS.nrrd", true));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetFinalTransform(), outputBase + "BSplineTransform.h5"));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "BSplineTransformed.nrrd", true));
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;

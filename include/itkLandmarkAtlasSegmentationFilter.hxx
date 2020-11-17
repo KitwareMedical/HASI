@@ -31,7 +31,7 @@
 #include "itkTransformFileWriter.h"
 #include "itkImageFileWriter.h"
 
-std::string outputBase = "/tmp/HASI";
+std::string outputBase = ".";
 
 
 namespace itk
@@ -62,7 +62,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::AffineFromRigid()
   m_AffineTransform->SetCenter(m_RigidTransform->GetCenter());
   m_AffineTransform->SetTranslation(m_RigidTransform->GetTranslation());
   m_AffineTransform->SetMatrix(m_RigidTransform->GetMatrix());
-  WriteTransform(m_AffineTransform, outputBase + "-affineInit.tfm"); // debug
+  if (this->GetDebug())
+  {
+    WriteTransform(m_AffineTransform, outputBase + "-affineInit.tfm"); // debug
+  }
 }
 
 template <typename TImage>
@@ -121,7 +124,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // and make sure that the other corresponding point maps to it perfectly
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
-  WriteTransform(m_LandmarksTransform, outputBase + "-landmarks.tfm");
+  if (this->GetDebug())
+  {
+    WriteTransform(m_LandmarksTransform, outputBase + "-landmarks.tfm");
+  }
 
 
   typename InputImageType::Pointer inputBone1 = this->Duplicate(this->GetInput(0));
@@ -239,13 +245,20 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   typename RealImageType::RegionType bone1Region;
   typename RealImageType::Pointer    inputDF1 =
     perBoneProcessing(inputBone1, m_InputLabels, 3, bone1Region); // just the first bone
-  WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
+
+  if (this->GetDebug())
+  {
+    WriteImage(inputBone1.GetPointer(), outputBase + "-bone1i.nrrd", false);
+  }
   // TODO: inputBone1=RegionOfInterest(inputBone1, bone1Region)
 
   typename RealImageType::RegionType atlasRegion;
   typename RealImageType::Pointer    atlasDF1 =
     perBoneProcessing(atlasBone1, m_AtlasLabels, 255, atlasRegion); // keep all atlas labels!
-  WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
+  if (this->GetDebug())
+  {
+    WriteImage(atlasBone1.GetPointer(), outputBase + "-bone1a.nrrd", false);
+  }
 
 
   constexpr unsigned int SplineOrder = 3;
@@ -359,7 +372,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     }
     m_RigidTransform = RigidTransformType::New();
     m_RigidTransform->SetParameters(registration1->GetLastTransformParameters());
-    WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
+    if (this->GetDebug())
+    {
+      WriteTransform(m_RigidTransform, outputBase + "-rigid.tfm");
+    }
 
 
     //  Perform Affine Registration
@@ -394,7 +410,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     registration1->Update();
     std::cout << " Affine Registration completed" << std::endl;
     m_AffineTransform->SetParameters(registration1->GetLastTransformParameters());
-    WriteTransform(m_AffineTransform, outputBase + "-affine.tfm");
+    if (this->GetDebug())
+    {
+      WriteTransform(m_AffineTransform, outputBase + "-affine.tfm");
+    }
   }
 
   inputDF1 = nullptr; // deallocate it
@@ -482,7 +501,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
     std::cout << " BSpline Deformable Registration completed" << std::endl;
     OptimizerType::ParametersType finalParameters = registration2->GetLastTransformParameters();
     m_FinalTransform->SetParameters(finalParameters);
-    WriteTransform(m_FinalTransform, outputBase + "-BSpline.tfm");
+    if (this->GetDebug())
+    {
+      WriteTransform(m_FinalTransform, outputBase + "-BSpline.tfm");
+    }
   }
 
   resampleFilter->SetTransform(m_FinalTransform);
@@ -491,7 +513,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->GraftOutput(this->GetOutput());
   resampleFilter->Update();
   this->GraftOutput(resampleFilter->GetOutput());
-  WriteImage(resampleFilter->GetOutput(), outputBase + "-label.nrrd", true);
+  if (this->GetDebug())
+  {
+    WriteImage(resampleFilter->GetOutput(), outputBase + "-label.nrrd", true);
+  }
 }
 
 } // end namespace itk
