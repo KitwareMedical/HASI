@@ -31,7 +31,7 @@
 #include "itkTransformFileWriter.h"
 #include "itkImageFileWriter.h"
 
-std::string outputBase = "/tmp/HASI";
+std::string outputBase = ".";
 
 
 namespace itk
