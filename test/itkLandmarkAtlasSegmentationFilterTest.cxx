@@ -109,31 +109,6 @@ readSlicerFiducials(std::string fileName)
   return points;
 }
 
-template <typename TImage>
-itk::SmartPointer<TImage>
-ReadImage(std::string filename)
-{
-  using ReaderType = itk::ImageFileReader<TImage>;
-  typename ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(filename);
-  reader->Update();
-  itk::SmartPointer<TImage> out = reader->GetOutput();
-  out->DisconnectPipeline();
-  return out;
-}
-
-template <typename TImage>
-void
-WriteImage(TImage * out, std::string filename, bool compress)
-{
-  using WriterType = itk::ImageFileWriter<TImage>;
-  typename WriterType::Pointer w = WriterType::New();
-  w->SetInput(out);
-  w->SetFileName(filename);
-  w->SetUseCompression(compress);
-  w->Update();
-}
-
 void
 WriteTransform(const itk::Object * transform, std::string fileName)
 {
@@ -178,13 +153,13 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
   ITK_EXERCISE_BASIC_OBJECT_METHODS(filter, LandmarkAtlasSegmentationFilter, ImageToImageFilter);
 
   ShortImageType::Pointer inputImage;
-  ITK_TRY_EXPECT_NO_EXCEPTION(inputImage = ReadImage<ShortImageType>(inputImageFilename));
+  ITK_TRY_EXPECT_NO_EXCEPTION(inputImage = itk::ReadImage<ShortImageType>(inputImageFilename));
   LabelImageType::Pointer inputBones;
-  ITK_TRY_EXPECT_NO_EXCEPTION(inputBones = ReadImage<LabelImageType>(inputBonesFilename));
+  ITK_TRY_EXPECT_NO_EXCEPTION(inputBones = itk::ReadImage<LabelImageType>(inputBonesFilename));
   ShortImageType::Pointer atlasImage;
-  ITK_TRY_EXPECT_NO_EXCEPTION(atlasImage = ReadImage<ShortImageType>(atlasImageFilename));
+  ITK_TRY_EXPECT_NO_EXCEPTION(atlasImage = itk::ReadImage<ShortImageType>(atlasImageFilename));
   LabelImageType::Pointer atlasLabels;
-  ITK_TRY_EXPECT_NO_EXCEPTION(atlasLabels = ReadImage<LabelImageType>(atlasLabelsFilename));
+  ITK_TRY_EXPECT_NO_EXCEPTION(atlasLabels = itk::ReadImage<LabelImageType>(atlasLabelsFilename));
 
   using PointsVector = std::vector<itk::Point<double, 3>>;
 
@@ -204,7 +179,7 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
   ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetLandmarksTransform(), outputBase + "LandmarksTransform.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "LandmarksTransformed.nrrd", true));
+  ITK_TRY_EXPECT_NO_EXCEPTION(itk::WriteImage(filter->GetOutput(), outputBase + "LandmarksTransformed.nrrd", true));
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;
