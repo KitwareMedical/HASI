@@ -122,27 +122,27 @@ ReadImage(std::string filename)
   return out;
 }
 
-//template <typename TImage>
-//void
-//WriteImage(TImage * out, std::string filename, bool compress)
-//{
-//  using WriterType = itk::ImageFileWriter<TImage>;
-//  typename WriterType::Pointer w = WriterType::New();
-//  w->SetInput(out);
-//  w->SetFileName(filename);
-//  w->SetUseCompression(compress);
-//  w->Update();
-//}
-//
-//void
-//WriteTransform(const itk::Object * transform, std::string fileName)
-//{
-//  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
-//  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
-//  transformWriter->SetInput(transform);
-//  transformWriter->SetFileName(fileName);
-//  transformWriter->Update();
-//}
+template <typename TImage>
+void
+WriteImage(TImage * out, std::string filename, bool compress)
+{
+  using WriterType = itk::ImageFileWriter<TImage>;
+  typename WriterType::Pointer w = WriterType::New();
+  w->SetInput(out);
+  w->SetFileName(filename);
+  w->SetUseCompression(compress);
+  w->Update();
+}
+
+void
+WriteTransform(const itk::Object * transform, std::string fileName)
+{
+  using TransformWriterType = itk::TransformFileWriterTemplate<double>;
+  typename TransformWriterType::Pointer transformWriter = TransformWriterType::New();
+  transformWriter->SetInput(transform);
+  transformWriter->SetFileName(fileName);
+  transformWriter->Update();
+}
 } // namespace
 
 int
@@ -204,13 +204,7 @@ itkLandmarkAtlasSegmentationFilterTest(int argc, char * argv[])
 
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
   ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetLandmarksTransform(), outputBase + "LandmarksTransform.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetRigidTransform(), outputBase + "RigidTransform.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetAffineTransform(), outputBase + "AffineTransform.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "AffineTransformed.nrrd", true));
-  filter->SetStopAtAffine(false);
-  ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteTransform(filter->GetFinalTransform(), outputBase + "BSplineTransform.h5"));
-  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "BSplineTransformed.nrrd", true));
+  ITK_TRY_EXPECT_NO_EXCEPTION(WriteImage(filter->GetOutput(), outputBase + "LandmarksTransformed.nrrd", true));
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;

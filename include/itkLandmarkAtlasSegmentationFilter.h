@@ -105,24 +105,6 @@ public:
   /** Only valid after Update. */
   itkGetConstObjectMacro(LandmarksTransform, RigidTransformType);
 
-  /** Only valid after Update. */
-  itkGetConstObjectMacro(RigidTransform, RigidTransformType);
-
-  using AffineTransformType = itk::AffineTransform<double, Dimension>;
-
-  /** Only valid after Update. */
-  itkGetConstObjectMacro(AffineTransform, AffineTransformType);
-
-  using CompositeTransformType = itk::CompositeTransform<>;
-
-  /** Only valid after Update. */
-  itkGetConstObjectMacro(FinalTransform, CompositeTransformType);
-
-  /** Should the registration stop at affine transform?
-   * If false, BSpline transform is computed. */
-  itkSetMacro(StopAtAffine, bool);
-  itkGetMacro(StopAtAffine, bool);
-  itkBooleanMacro(StopAtAffine);
 
 protected:
   LandmarkAtlasSegmentationFilter()
@@ -147,12 +129,6 @@ protected:
   using IndexType = typename TOutputImage::IndexType;
   using SizeType = typename TOutputImage::SizeType;
 
-  typename InputImageType::Pointer
-  Duplicate(const TInputImage * input);
-
-  void
-  AffineFromRigid();
-
   void
   GenerateData() override;
 
@@ -164,11 +140,6 @@ private:
   LandmarksType m_InputLandmarks;
 
   typename RigidTransformType::Pointer     m_LandmarksTransform = nullptr;
-  typename RigidTransformType::Pointer     m_RigidTransform = nullptr;
-  typename AffineTransformType::Pointer    m_AffineTransform = nullptr;
-  typename CompositeTransformType::Pointer m_FinalTransform = nullptr;
-
-  bool m_StopAtAffine = true;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,

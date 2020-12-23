@@ -21,7 +21,7 @@ itk_add_test(NAME itkLandmarkAtlasSegmentationFilterTest
   COMMAND HASITestDriver
     --compare
     DATA{Baseline/901-L-A.nrrd}
-    ${ITK_TEST_OUTPUT_DIR}/901-L-AffineTransformed.nrrd
+    ${ITK_TEST_OUTPUT_DIR}/901-L-LandmarksTransformed.nrrd
   itkLandmarkAtlasSegmentationFilterTest
     DATA{Input/901-L.nrrd}
     DATA{Input/907-L.nrrd}
