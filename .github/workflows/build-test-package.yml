@@ -2,6 +2,9 @@ name: Build, test, package
 
 on: [push,pull_request]
 
+env:
+  ITKBoneEnhancement-git-tag: v0.4.0
+
 jobs:
   build-test-cxx:
     runs-on: ${{ matrix.os }}
@@ -173,6 +176,7 @@ jobs:
         git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement
         mv ./dockcross-manylinux-download-cache-and-build-module-wheels.sh ./ITKBoneEnhancement
         pushd ITKBoneEnhancement
+        git checkout ${{env.ITKBoneEnhancement-git-tag}}
         ./dockcross-manylinux-download-cache-and-build-module-wheels.sh cp${{ matrix.python-version }}
         popd
         cp ITKBoneEnhancement/include/* include/
@@ -216,6 +220,7 @@ jobs:
         git clone https://github.com/InsightSoftwareConsortium/ITKBoneEnhancement
         cp ./macpython-download-cache-and-build-module-wheels.sh ITKBoneEnhancement/
         pushd ITKBoneEnhancement
+        git checkout ${{env.ITKBoneEnhancement-git-tag}}
         ./macpython-download-cache-and-build-module-wheels.sh
         popd
         cp ITKBoneEnhancement/include/* include/
@@ -272,6 +277,7 @@ jobs:
         set CC=cl.exe
         set CXX=cl.exe
         cd ITKBoneEnhancement
+        "C:\Program Files\Git\bin\git.exe" checkout ${{env.ITKBoneEnhancement-git-tag}}
         C:\Python3${{ matrix.python-version-minor }}-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py --py-envs "3${{ matrix.python-version-minor }}-x64" --no-cleanup
         cd ..
         copy ITKBoneEnhancement/include/* include/
