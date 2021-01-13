@@ -133,6 +133,34 @@ readSlicerFiducials(std::string fileName)
   return points;
 }
 
+template <typename TImage, unsigned VDimension>
+void
+hardenLinearTransform(TImage * image, itk::Transform<itk::SpacePrecisionType, VDimension, VDimension> * linearTransform)
+{
+  static_assert(TImage::ImageDimension == VDimension, "Image and transform must have same spatial dimension");
+
+  // transform origin
+  typename TImage::PointType origin = image->GetOrigin();
+  origin = linearTransform->TransformPoint(origin);
+  image->SetOrigin(origin);
+
+  // transform direction cosines
+  typename TImage::DirectionType direction = image->GetDirection();
+  for (unsigned i = 0; i < VDimension; i++)
+  {
+    itk::Vector<itk::SpacePrecisionType, VDimension> dirVector;
+    for (unsigned k = 0; k < VDimension; k++)
+    {
+      dirVector[k] = direction[k][i];
+    }
+    dirVector = linearTransform->TransformVector(dirVector);
+    for (unsigned k = 0; k < VDimension; k++)
+    {
+      direction[k][i] = dirVector[k];
+    }
+  }
+  image->SetDirection(direction);
+}
 
 template <typename ImageType>
 void
@@ -191,6 +219,8 @@ mainProcessing(std::string inputBase, std::string poseFile, std::string outputBa
     ++it;
   }
   WriteImage(inputLabels, inputBase + "-femur-label-cropped.nrrd", true);
+  hardenLinearTransform(inputLabels.GetPointer(), inverseTransform.GetPointer());
+  WriteImage(inputLabels, inputBase + "-femur-label-aligned.nrrd", true);
 
   SizeType padding;
   padding.Fill(1);
