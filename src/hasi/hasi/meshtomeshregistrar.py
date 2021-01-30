@@ -2,14 +2,14 @@
 
 # Filename: MeshToMeshRegistration
 # Contributors: Tom Birdsong
-# Purpose: Python implementation of Slicer SALT mesh-to-mesh registration Cxx
-# CLI.
-#    Ported from https://github.com/slicersalt/RegistrationBasedCorrespondence/
+# Purpose: Base Python class for implementations of mesh-to-mesh registration algorithms.
+#   Initially ported from https://github.com/slicersalt/RegistrationBasedCorrespondence/
 import logging
 import os
+import random
 
 import itk
-
+import numpy as np
 
 class MeshToMeshRegistrar:
     # Common definitions
@@ -26,6 +26,7 @@ class MeshToMeshRegistrar:
     FixedPointSetType = itk.PointSet[itk.F, Dimension]
 
     MeshType = itk.Mesh[itk.F, Dimension]
+    PointSetType = itk.PointSet[itk.F, Dimension]
 
     def __init__(self):
         self.initialize()
@@ -91,3 +92,56 @@ class MeshToMeshRegistrar:
             images.append(distance.GetOutput())
 
         return images[0] if len(images) == 1 else images
+
+    # Randomly sample mesh to get a reduced point set
+    # This may not be suitable for low-density meshes
+    def randomly_sample_mesh_points(self, mesh:MeshType, sampling_rate:float=1.0) -> PointSetType:
+        if(sampling_rate > 1.0):
+            raise ValueError('Cannot resample with a rate greater than 1.0!')
+        
+        selected_points = set()
+        num_source_points = mesh.GetNumberOfPoints()
+        resampled_set = self.PointSetType.New()
+
+        while resampled_set.GetNumberOfPoints() < sampling_rate * num_source_points:
+            point_index = random.randrange(0, num_source_points)
+            while(point_index in selected_points):
+                point_index = random.randrange(0, num_source_points)
+            selected_points.add(point_index)
+
+            resampled_set.SetPoint(
+                resampled_set.GetNumberOfPoints(),
+                mesh.GetPoint(point_index))
+
+        return resampled_set
+    
+    @staticmethod
+    def resample_template_from_target(template_mesh:MeshType, target_mesh:MeshType) -> MeshType:
+        # Set samples from target mesh points
+        measurement = itk.Vector[itk.F,3]()
+        sample = itk.ListSample[type(measurement)].New()
+
+        # Use available wrapping for itk.VectorContainer
+        if (itk.ULL, itk.ULL) in itk.VectorContainer.keys():
+            neighbors = itk.VectorContainer[itk.ULL, itk.ULL].New()
+        else:
+            neighbors = itk.VectorContainer[itk.UL, itk.UL].New()
+
+        sample.Resize(target_mesh.GetNumberOfPoints())
+        for i in range(0, target_mesh.GetNumberOfPoints()):
+            measurement.SetVnlVector(target_mesh.GetPoint(i).GetVnlVector())
+            sample.SetMeasurementVector(i, measurement)
+
+        # Build kd-tree
+        tree_generator = itk.KdTreeGenerator[type(sample)].New(Sample=sample, BucketSize=16)
+        tree_generator.Update()
+
+        # Iteratively update template points to nearest neighbor in target point set
+        tree = tree_generator.GetOutput()
+
+        for i in range(0, template_mesh.GetNumberOfPoints()):
+            measurement.SetVnlVector(template_mesh.GetPoint(i).GetVnlVector())
+            tree.Search(measurement, 1, neighbors)
+            template_mesh.SetPoint(i, target_mesh.GetPoint(neighbors.GetElement(0)))
+
+        return template_mesh

@@ -42,9 +42,6 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
     SMOOTHING_SIGMAS_PER_LEVEL = [0] * NUMBER_OF_LEVELS
     SHRINK_FACTORS_PER_LEVEL = [1] * Dimension
 
-    # TODO investigate if this is useful
-    LinearInterpolatorType = \
-        itk.LinearInterpolateImageFunction[ImageType, itk.D]
     TransformType = itk.BSplineTransform[itk.D, Dimension, V_SPLINE_ORDER]
     
 
@@ -100,6 +97,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
             infnorm = self.optimizer.GetInfinityNormOfProjectedGradient()
             print(f'{iteration} {metric} {infnorm}')
 
+        # FIXME adds a duplicate observer if multiple calls without re-initialization
         if(verbose):
             self.optimizer.AddObserver(itk.IterationEvent(),
                                             print_iteration)
@@ -107,6 +105,8 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
         self.optimizer.SetNumberOfIterations(num_iterations)
 
         # Define object to handle image registration
+
+        # TODO use functional interface image_registration_method()
         RegistrationType = \
             itk.ImageRegistrationMethodv4[ImageType,ImageType]
         registration = RegistrationType.New(InitialTransform=transform,
@@ -126,16 +126,11 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
         #     no observed impact on performance from this warning
         registration.Update()
 
-        # TODO functional interface
-        # image_registration_method()
-
         # Report results
         if(verbose):
             print('Solution = ' + str(list(transform.GetParameters())))
-
-        # Update fixed image
-        # TODO try inverting moving transform and compare results
-
+        
+        # Update template
         transformed_mesh = itk.transform_mesh_filter(template_mesh, transform=transform)
 
         # Write out
