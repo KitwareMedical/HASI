@@ -175,7 +175,10 @@ zeroPad(itk::SmartPointer<TImage>         image,
 
 template <typename ImageType>
 void
-mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename, double corticalBoneThickness)
+mainProcessing(typename ImageType::ConstPointer inImage,
+               std::string                      outFilename,
+               double                           corticalBoneThickness,
+               itk::IdentifierType              boneCount)
 {
   itk::Array<double> sigmaArray(1);
   sigmaArray[0] = corticalBoneThickness;
@@ -338,7 +341,7 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
 
 
   // per-bone processing
-  for (unsigned bone = 1; bone <= numBones; bone++)
+  for (unsigned bone = 1; bone <= std::min(numBones, boneCount); bone++)
   {
     if (replacedBy[bone] > 0)
     {
@@ -545,7 +548,7 @@ main(int argc, char * argv[])
   {
     std::cerr << "Usage: " << std::endl;
     std::cerr << argv[0];
-    std::cerr << " <InputFileName> <OutputFileName> [corticalBoneThickness] [debugLevel]";
+    std::cerr << " <InputFileName> <OutputFileName> [corticalBoneThickness] [debugLevel] [boneCount]";
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
@@ -555,6 +558,7 @@ main(int argc, char * argv[])
     std::string inputFileName = argv[1];
     std::string outputFileName = argv[2];
     double      corticalBoneThickness = 0.1;
+    unsigned    boneCount = 255; // all bones by default
     if (argc > 3)
     {
       corticalBoneThickness = std::stod(argv[3]);
@@ -562,6 +566,10 @@ main(int argc, char * argv[])
     if (argc > 4)
     {
       runDebugLevel = std::stoul(argv[4]);
+    }
+    if (argc > 5)
+    {
+      boneCount = std::stoul(argv[5]);
     }
 
     std::cout.precision(4);
@@ -583,7 +591,7 @@ main(int argc, char * argv[])
     image = median->GetOutput();
     image->DisconnectPipeline();
 
-    mainProcessing<InputImageType>(image, outputFileName, corticalBoneThickness);
+    mainProcessing<InputImageType>(image, outputFileName, corticalBoneThickness, boneCount);
     return EXIT_SUCCESS;
   }
   catch (itk::ExceptionObject & exc)
