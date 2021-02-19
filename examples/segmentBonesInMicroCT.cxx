@@ -290,6 +290,11 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
   finalBones->SetRegions(wholeImage);
   finalBones->Allocate(true);
 
+  typename LabelImageType::Pointer splitBones = LabelImageType::New();
+  splitBones->CopyInformation(inImage);
+  splitBones->SetRegions(wholeImage);
+  splitBones->Allocate(true);
+
   // do morphological processing per bone, to avoid merging bones which are close to each other
   itk::IdentifierType numBones = 0;
 
@@ -490,29 +495,47 @@ mainProcessing(typename ImageType::ConstPointer inImage, std::string outFilename
     // now combine them, clipping them to the boneBasin
     mt->ParallelizeImageRegion<Dimension>(
       safeBoneRegion,
-      [finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, background](const RegionType region) {
+      [splitBones, finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, background](
+        const RegionType region) {
         itk::ImageRegionConstIterator<LabelImageType> mIt(erodedMarrow, region);
         itk::ImageRegionConstIterator<LabelImageType> bIt(dilatedBone, region);
         itk::ImageRegionConstIterator<LabelImageType> cIt(cortexLabel, region);
         itk::ImageRegionConstIterator<LabelImageType> iIt(boneBasin, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(finalBones, region);
+        itk::ImageRegionIterator<LabelImageType>      sIt(splitBones, region);
         for (; !oIt.IsAtEnd(); ++mIt, ++bIt, ++cIt, ++iIt, ++oIt)
         {
           if (iIt.Get())
           {
+            if (cIt.Get())
+            {
+              sIt.Set(3 * bone - 2);
+            }
+            else if (bIt.Get())
+            {
+              sIt.Set(3 * bone - 1);
+            }
+            else if (mIt.Get())
+            {
+              sIt.Set(3 * bone);
+            }
+
             if (cIt.Get() || bIt.Get() || mIt.Get())
             {
-              oIt.Set(1);
+              oIt.Set(bone);
             }
           }
           // else this is background
         }
       },
       nullptr);
-    UpdateAndWrite(finalBones, outFilename + "-femur-label.nrrd", true, 0);
-    return;
+    UpdateAndWrite(finalBones, outFilename + "-label.nrrd", true, 0); // checkpoint write
+    if (bone == 1)
+    {
+      UpdateAndWrite(finalBones, outFilename + "-femur-label.nrrd", true, 0);
+    }
   }
-  UpdateAndWrite(finalBones, outFilename + "-label.nrrd", true, 0); // always write
+  UpdateAndWrite(splitBones, outFilename + "-split-label.nrrd", true, 0);
 }
 
 int
