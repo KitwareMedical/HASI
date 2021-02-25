@@ -13,7 +13,7 @@ charset = utf-8
 
 # 4 space indentation
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 # Various options
 trim_trailing_whitespace = true
