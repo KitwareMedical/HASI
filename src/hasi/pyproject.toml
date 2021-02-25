@@ -1,0 +1,11 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "hasi"
+author = "Kitware Medical"
+author-email = "matt.mccormick@kitware.com"
+home-page = "https://github.com/KitwareMedical/HASI"
+classifiers = ["License :: OSI Approved :: Apache Software License"]
+

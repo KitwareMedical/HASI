@@ -38,7 +38,7 @@ mesh2 = itk.meshread(MOVING_MESH_FILE)
 # Test base class import and functions
 def test_mesh_to_image():
     # Class is imported
-    from src.registration.meshtomeshregistrar import MeshToMeshRegistrar
+    from src.hasi.hasi.meshtomeshregistrar import MeshToMeshRegistrar
 
     # Class is instantiable
     registrar = MeshToMeshRegistrar()
@@ -67,7 +67,7 @@ def test_meansquares_registration():
     MESH_OUTPUT = 'test/Output/testMeanSquaresRegisterOutput.vtk'
 
     # Class is imported
-    from src.registration.meansquaresregistrar import MeanSquaresRegistrar
+    from src.hasi.hasi.meansquaresregistrar import MeanSquaresRegistrar
 
     # Class is instantiable
     registrar = MeanSquaresRegistrar()
@@ -102,7 +102,7 @@ def test_diffeo_registration():
     MESH_OUTPUT = 'test/Output/testDiffeoRegisterOutput.vtk'
 
     # Class is imported
-    from src.registration.diffeoregistrar import DiffeoRegistrar
+    from src.hasi.hasi.diffeoregistrar import DiffeoRegistrar
 
     # Class is instantiable
     registrar = DiffeoRegistrar()
