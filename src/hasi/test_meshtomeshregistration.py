@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
-# Filename:     test_m2mregistration.py
+# Filename:     test_meshtomeshregistration.py
 # Contributors: Tom Birdsong
 # Purpose:  Pytest definitions for mesh-to-mesh registration classes
-#           defined in the src/registration module
+#           defined in the src/hasi/hasi module
+
+# Directions:
+# - cd into the src/hasi directory
+# - run `pytest .`
 
 import os
 import sys
@@ -22,6 +26,10 @@ MAX_ITERATIONS = 200
 FIXED_MESH_FILE = 'test/Input/901-L-mesh.vtk'
 MOVING_MESH_FILE = 'test/Input/901-R-mesh.vtk'
 
+os.makedirs('test', exist_ok=True)
+os.makedirs('test/Input', exist_ok=True)
+os.makedirs('test/Output', exist_ok=True)
+
 if not os.path.exists(FIXED_MESH_FILE):
     url = 'https://data.kitware.com/api/v1/file/5f9daaae50a41e3d1924dae1/download'
     urlretrieve(url, FIXED_MESH_FILE)
@@ -38,7 +46,7 @@ mesh2 = itk.meshread(MOVING_MESH_FILE)
 # Test base class import and functions
 def test_mesh_to_image():
     # Class is imported
-    from src.hasi.hasi.meshtomeshregistrar import MeshToMeshRegistrar
+    from hasi.meshtomeshregistrar import MeshToMeshRegistrar
 
     # Class is instantiable
     registrar = MeshToMeshRegistrar()
@@ -67,7 +75,7 @@ def test_meansquares_registration():
     MESH_OUTPUT = 'test/Output/testMeanSquaresRegisterOutput.vtk'
 
     # Class is imported
-    from src.hasi.hasi.meansquaresregistrar import MeanSquaresRegistrar
+    from hasi.meansquaresregistrar import MeanSquaresRegistrar
 
     # Class is instantiable
     registrar = MeanSquaresRegistrar()
@@ -102,7 +110,7 @@ def test_diffeo_registration():
     MESH_OUTPUT = 'test/Output/testDiffeoRegisterOutput.vtk'
 
     # Class is imported
-    from src.hasi.hasi.diffeoregistrar import DiffeoRegistrar
+    from hasi.diffeoregistrar import DiffeoRegistrar
 
     # Class is instantiable
     registrar = DiffeoRegistrar()
