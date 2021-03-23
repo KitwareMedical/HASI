@@ -22,6 +22,7 @@
 
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkResampleImageFilter.h"
+#include "itkNearestNeighborInterpolateImageFunction.h"
 
 namespace itk
 {
@@ -66,6 +67,9 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   // and make sure that the other corresponding point maps to it perfectly
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
+  using InterpolatorType = itk::NearestNeighborInterpolateImageFunction<OutputImageType, double>;
+  typename InterpolatorType::Pointer interpolator = InterpolatorType::New();  
+
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   typename ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
   resampleFilter->SetInput(m_AtlasLabels);
@@ -73,6 +77,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   resampleFilter->SetUseReferenceImage(true);
   resampleFilter->SetDefaultPixelValue(0);
   resampleFilter->SetTransform(m_LandmarksTransform);
+  resampleFilter->SetInterpolator(interpolator);
 
   // grafting pattern spares us from allocating an intermediate image
   resampleFilter->GraftOutput(this->GetOutput());
