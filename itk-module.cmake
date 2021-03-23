@@ -15,11 +15,8 @@ itk_module(HASI
     ITKLabelMap
     ITKRegistrationCommon
     ITKSpatialObjects
+    ITKTransform
     BoneEnhancement
-    # debugging
-    ITKIOTransformHDF5
-    ITKIOTransformInsightLegacy
-    ITKTestKernel
   COMPILE_DEPENDS
     ITKImageSources
   TEST_DEPENDS
