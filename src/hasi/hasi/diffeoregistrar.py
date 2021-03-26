@@ -32,6 +32,8 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
 
     # Definitions for diffeometric registration
     STANDARD_DEVIATIONS = 1.0
+    TransformType = \
+        itk.DisplacementFieldTransform[itk.F, Dimension]
 
 
     def __init__(self):
@@ -54,7 +56,7 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
                  target_mesh:MeshType,
                  filepath:str=None,
                  verbose=False,
-                 max_iterations=MAX_ITERATIONS) -> MeshType:
+                 max_iterations=MAX_ITERATIONS) -> (TransformType, MeshType):
         template_image = self.mesh_to_image(template_mesh)
         target_image = self.mesh_to_image(target_mesh,template_image)
 
@@ -74,9 +76,7 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
         self.filter.Update()
         
         # Update template mesh to match target
-        DisplacementFieldTransformType = \
-            itk.DisplacementFieldTransform[itk.F, self.Dimension]
-        transform = DisplacementFieldTransformType.New()
+        transform = self.TransformType.New()
         transform.SetDisplacementField(self.filter.GetOutput())
 
         # TODO pythonic style
@@ -93,4 +93,4 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
             if(verbose):
                 print(f'Wrote resulting mesh to {filepath}')
 
-        return transform_filter.GetOutput()
+        return (transform, transform_filter.GetOutput())

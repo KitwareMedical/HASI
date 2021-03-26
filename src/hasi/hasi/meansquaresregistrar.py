@@ -45,6 +45,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
     # TODO investigate if this is useful
     LinearInterpolatorType = \
         itk.LinearInterpolateImageFunction[ImageType, itk.D]
+    TransformType = itk.BSplineTransform[itk.D, Dimension, V_SPLINE_ORDER]
     
 
     def __init__(self):
@@ -64,7 +65,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
                  target_mesh:MeshType,
                  filepath:str=None,
                  verbose=False,
-                 num_iterations=MAX_ITERATIONS) -> MeshType:
+                 num_iterations=MAX_ITERATIONS) -> (TransformType, MeshType):
 
         template_image = self.mesh_to_image(template_mesh)
         target_image = self.mesh_to_image(target_mesh, template_image)
@@ -82,8 +83,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
             fixed_physical_dimensions.append(template_image.GetSpacing()[i] * \
                 (template_image.GetLargestPossibleRegion().GetSize()[i] - 1))
             
-        TransformType = itk.BSplineTransform[itk.D, Dimension, self.V_SPLINE_ORDER]
-        transform = TransformType.New(TransformDomainOrigin=fixed_origin,
+        transform = self.TransformType.New(TransformDomainOrigin=fixed_origin,
                                             TransformDomainPhysicalDimensions=fixed_physical_dimensions,
                                             TransformDomainDirection=template_image.GetDirection())
         transform.SetTransformDomainMeshSize([self.GRID_NODES_IN_ONE_DIMENSION - self.V_SPLINE_ORDER] * Dimension)
@@ -145,4 +145,4 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
             if(verbose):
                 print(f'Wrote resulting mesh to {filepath}')
 
-        return transformed_mesh
+        return (transform, transformed_mesh)

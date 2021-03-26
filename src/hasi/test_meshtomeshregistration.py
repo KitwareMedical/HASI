@@ -20,7 +20,7 @@ if module_path not in sys.path:
 import itk
 
 MEANSQUARES_METRIC_MAXIMUM_THRESHOLD = 0.002
-DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.0001
+DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.0002
 MAX_ITERATIONS = 200
 
 FIXED_MESH_FILE = 'test/Input/901-L-mesh.vtk'
@@ -81,7 +81,7 @@ def test_meansquares_registration():
     registrar = MeanSquaresRegistrar()
 
     # Registration executes
-    mesh3 = registrar.register(mesh1,mesh2,filepath=MESH_OUTPUT)
+    (transform, mesh3) = registrar.register(mesh1,mesh2,filepath=MESH_OUTPUT)
 
     # Mesh was generated
     assert(type(mesh3) == type(mesh1))
@@ -92,7 +92,10 @@ def test_meansquares_registration():
   
     # Optimization did not exceed allowable iterations
     assert(registrar.optimizer.GetCurrentIteration() <= MAX_ITERATIONS)
-  
+
+    # Transform was output
+    assert(type(transform) == registrar.TransformType)
+
     # Mesh was output
     assert(os.path.isfile(MESH_OUTPUT))
 
@@ -116,7 +119,10 @@ def test_diffeo_registration():
     registrar = DiffeoRegistrar()
 
     # Registration executes without error
-    mesh4 = registrar.register(mesh1,mesh2,filepath=MESH_OUTPUT)
+    (transform, mesh4) = registrar.register(mesh1,mesh2,filepath=MESH_OUTPUT)
+    
+    # Transform was output
+    assert(type(transform) == registrar.TransformType)
 
     # Mesh was generated
     assert(type(mesh4) == type(mesh1))
