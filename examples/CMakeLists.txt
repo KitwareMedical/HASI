@@ -39,9 +39,11 @@ include(${ITK_USE_FILE})
 
 add_executable(segmentBonesInMicroCT segmentBonesInMicroCT.cxx)
 add_executable(normalizedPoseMesh normalizedPoseMesh.cxx)
+add_executable(resampleAxisAligned resampleAxisAligned.cxx)
 
 target_link_libraries(segmentBonesInMicroCT ${ITK_LIBRARIES})
 target_link_libraries(normalizedPoseMesh ${ITK_LIBRARIES})
+target_link_libraries(resampleAxisAligned ${ITK_LIBRARIES})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT normalizedPoseMesh)
 
 set(INSTALL_RUNTIME_DESTINATION bin CACHE STRING "Install destination")
@@ -50,5 +52,6 @@ install(
   TARGETS
     segmentBonesInMicroCT
     normalizedPoseMesh
+    resampleAxisAligned
   DESTINATION ${INSTALL_RUNTIME_DESTINATION}
   )
