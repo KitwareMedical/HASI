@@ -1,5 +1,4 @@
 itk-hasi
 itkwidgets
 itk-boneenhancement
-itk-elastix
 itk-bonemorphometry
