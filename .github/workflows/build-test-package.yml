@@ -204,8 +204,10 @@ jobs:
         ./dockcross-manylinux-download-cache-and-build-module-wheels.sh cp${{ matrix.python-version }}
         popd
         cp ITKBoneEnhancement/include/* include/
-        ln -s $(pwd)/ITKBoneEnhancement/ITKPythonPackage .
-        ln -s $(pwd)/ITKBoneEnhancement/tools .
+        rm ./ITKBoneEnhancement/doxygen-1.8.11.linux.bin.tar.gz
+        rm ./ITKBoneEnhancement/ITKPythonBuilds-linux.tar.zst
+        mv ./ITKBoneEnhancement/ITKPythonPackage .
+        mv ./ITKBoneEnhancement/tools .
         ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp${{ matrix.python-version }}
 
     - name: Publish Python package as GitHub Artifact
@@ -248,7 +250,8 @@ jobs:
         ./macpython-download-cache-and-build-module-wheels.sh
         popd
         cp ITKBoneEnhancement/include/* include/
-        ./ITKPythonPackage/scripts/macpython-build-module-wheels.sh
+        rm ./ITKBoneEnhancement/ITKPythonBuilds-macosx.tar.zst
+        /Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-build-module-wheels.sh
 
     - name: Publish Python package as GitHub Artifact
       uses: actions/upload-artifact@v1
