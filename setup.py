@@ -45,6 +45,7 @@ setup(
     url=r'https://itk.org/',
     install_requires=[
         r'itk>=5.2rc1',
-        r'itk-boneenhancement'
+        r'itk-boneenhancement',
+        r'itk-ioscanco',
     ]
     )

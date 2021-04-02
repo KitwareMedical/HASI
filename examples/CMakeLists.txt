@@ -27,6 +27,7 @@ find_package(ITK 5 REQUIRED
     ITKSpatialObjects
     BoneEnhancement
     Cuberille
+    IOScanco
     ITKMesh
     ITKIOMeshBase
     ITKIOMeta
