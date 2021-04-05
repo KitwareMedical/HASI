@@ -35,7 +35,7 @@ class MeshToMeshRegistrar:
         pass
     
     def register(self, template_mesh:MeshType, target_mesh:MeshType,
-                       filepath:str=None, verbose=False) -> MeshType:
+                       filepath:str=None, verbose=False):
         raise NotImplementedError('Base class does not implement register functionality')
 
     # Convert itk.Mesh object to 3-dimensional itk.Image object
