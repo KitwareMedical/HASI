@@ -3,7 +3,7 @@ name: Build, test, package
 on: [push,pull_request]
 
 env:
-  ITKBoneEnhancement-git-tag: v0.4.0
+  ITKBoneEnhancement-git-tag: v0.4.1
 
 jobs:
   build-test-cxx:
@@ -266,7 +266,7 @@ jobs:
       matrix:
         python-version-minor: [6, 7, 8, 9]
         include:
-          - itk-python-git-tag: "v5.2rc03"
+          - itk-python-git-tag: "v5.2.0"
 
     steps:
     - name: Get specific version of CMake, Ninja
