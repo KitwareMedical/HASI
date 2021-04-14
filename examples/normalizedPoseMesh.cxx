@@ -218,7 +218,7 @@ mainProcessing(std::string inputBase, std::string poseFile, std::string outputBa
   using MeshTransformType = itk::TransformMeshFilter<TMesh, TMesh, RigidTransformType>;
   typename MeshTransformType::Pointer filter = MeshTransformType::New();
   filter->SetInput(extract->GetOutput());
-  filter->SetTransform(inverseTransform);
+  filter->SetTransform(rigidTransform);
   filter->Update();
   WriteMesh<TMesh>(filter->GetOutput(), outputBase + "-mesh.vtk", false);
 
