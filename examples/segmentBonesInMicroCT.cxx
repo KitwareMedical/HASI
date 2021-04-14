@@ -507,7 +507,7 @@ mainProcessing(typename ImageType::ConstPointer inImage,
         itk::ImageRegionConstIterator<LabelImageType> iIt(boneBasin, region);
         itk::ImageRegionIterator<LabelImageType>      oIt(finalBones, region);
         itk::ImageRegionIterator<LabelImageType>      sIt(splitBones, region);
-        for (; !oIt.IsAtEnd(); ++mIt, ++bIt, ++cIt, ++iIt, ++oIt)
+        for (; !oIt.IsAtEnd(); ++mIt, ++bIt, ++cIt, ++iIt, ++oIt, ++sIt)
         {
           if (iIt.Get())
           {
