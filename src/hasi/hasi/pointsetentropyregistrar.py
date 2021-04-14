@@ -74,8 +74,8 @@ class PointSetEntropyRegistrar(MeshToMeshRegistrar):
 
         # Optionally resample to improve performance
         if(resample_rate != 1.0):
-            template_point_set = self.randomly_sample_point_set(point_set=template_point_set, sampling_rate=resample_rate)
-            target_point_set = self.randomly_sample_point_set(point_set=target_point_set, sampling_rate=resample_rate)
+            template_point_set = self.randomly_sample_mesh_points(mesh=template_point_set, sampling_rate=resample_rate)
+            target_point_set = self.randomly_sample_mesh_points(mesh=target_point_set, sampling_rate=resample_rate)
 
         # Define registration components
         if not transform:

@@ -54,6 +54,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
             GradientConvergenceTolerance=self.GRADIENT_CONVERGENCE_TOLERANCE,
             MaximumNumberOfFunctionEvaluations=self.MAX_FUNCTION_EVALUATIONS,
             MaximumNumberOfCorrections=self.MAX_CORRECTIONS)
+        # TODO initialize verbose output with observer
 
 
     # Register two 3D images with an LBFGSB optimizer
@@ -134,6 +135,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
         transformed_mesh = itk.transform_mesh_filter(template_mesh, transform=transform)
 
         # Write out
+        # TODO move away from monolithic design, leave write responsibility to user
         if filepath is not None:
             itk.meshwrite(transformed_mesh, filepath)
             if(verbose):

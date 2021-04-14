@@ -19,12 +19,12 @@ if module_path not in sys.path:
 
 import itk
 
-MEANSQUARES_METRIC_MAXIMUM_THRESHOLD = 0.002
-DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.0002
+MEANSQUARES_METRIC_MAXIMUM_THRESHOLD = 0.015
+DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.25
 POINT_SET_METRIC_MAXIMUM_THRESHOLD = 0.0001
 MAX_ITERATIONS = 200
 
-TEMPLATE_MESH_FILE = 'test/Input/901-L-mesh.vtk'
+TEMPLATE_MESH_FILE = 'test/Input/template-901-L.obj'
 TARGET_MESH_FILE = 'test/Input/901-R-mesh.vtk'
 
 os.makedirs('test', exist_ok=True)
@@ -32,17 +32,15 @@ os.makedirs('test/Input', exist_ok=True)
 os.makedirs('test/Output', exist_ok=True)
 
 if not os.path.exists(TEMPLATE_MESH_FILE):
-    url = 'https://data.kitware.com/api/v1/file/5f9daaae50a41e3d1924dae1/download'
+    url = 'https://data.kitware.com/api/v1/file/60762a4b2fa25629b9bbefef/download'
     urlretrieve(url, TEMPLATE_MESH_FILE)
     
 if not os.path.exists(TARGET_MESH_FILE):
     url = 'https://data.kitware.com/api/v1/file/5f9daaba50a41e3d1924dae9/download'
     urlretrieve(url, TARGET_MESH_FILE)
 
-os.makedirs('test/Output', exist_ok=True)
-
-template_mesh = itk.meshread(TEMPLATE_MESH_FILE)
-target_mesh = itk.meshread(TARGET_MESH_FILE)
+template_mesh = itk.meshread(TEMPLATE_MESH_FILE, itk.F)
+target_mesh = itk.meshread(TARGET_MESH_FILE, itk.F)
 
 # Test base class import and functions
 def test_mesh_to_image():
@@ -169,16 +167,15 @@ def test_pointset_registration():
     (transform, template_output_mesh) = registrar.register(template_mesh=template_mesh,
                                target_mesh=target_mesh,
                                filepath=MESH_OUTPUT_FILE,
-                               resample_rate=0.001,
-                               resample_from_target=True)
+                               resample_from_target=False)
     
     # Transform was output
     assert(type(transform) == registrar.TransformType)
 
     # Mesh was generated
     assert(type(template_output_mesh) == type(template_mesh))
-
-    # Mesh is a resampling of the original template
+    
+    # Mesh is a transformation of the original template
     assert(template_output_mesh.GetNumberOfPoints() == \
         template_mesh.GetNumberOfPoints())
 
@@ -195,6 +192,10 @@ def test_pointset_registration():
     # Resample template
     template_resampled = \
         registrar.resample_template_from_target(template_output_mesh, target_mesh)
+    
+    # Mesh is a transformation of the original template
+    assert(template_resampled.GetNumberOfPoints() == \
+        template_mesh.GetNumberOfPoints())
 
     # Clean up
     os.remove(MESH_OUTPUT_FILE)
