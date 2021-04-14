@@ -305,8 +305,9 @@ mainProcessing(typename ImageType::ConstPointer inImage,
   // we might not even get to this point if there are more than 255 bones
   // we need 3 labels per bone, one each for cortical, trabecular and marrow
   itkAssertOrThrowMacro(numBones <= 85, "There are too many bones to fit into uchar");
+  UpdateAndWrite(bones, outFilename + "-bones-label.nrrd", true, 1);
 
-  bones = zeroPad(bones, opSize, outFilename + "-bones-label.nrrd", 1);
+  bones = zeroPad(bones, opSize, outFilename + "-bonesPad-label.nrrd", 3);
   typename RealImageType::Pointer boneDist = sdf(bones, outFilename + "-bones-dist.nrrd", 3);
 
   // calculate bounding box for each bone
