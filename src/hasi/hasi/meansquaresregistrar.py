@@ -67,8 +67,7 @@ class MeanSquaresRegistrar(MeshToMeshRegistrar):
                  verbose=False,
                  num_iterations=MAX_ITERATIONS) -> (TransformType, MeshType):
 
-        template_image = self.mesh_to_image(template_mesh)
-        target_image = self.mesh_to_image(target_mesh, template_image)
+        (template_image, target_image) = self.mesh_to_image([template_mesh, target_mesh])
 
         ImageType = type(template_image)
         Dimension = template_image.GetImageDimension()
