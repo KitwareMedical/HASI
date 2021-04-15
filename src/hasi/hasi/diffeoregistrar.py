@@ -57,8 +57,8 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
                  filepath:str=None,
                  verbose=False,
                  max_iterations=MAX_ITERATIONS) -> (TransformType, MeshType):
-        template_image = self.mesh_to_image(template_mesh)
-        target_image = self.mesh_to_image(target_mesh,template_image)
+
+        (template_image, target_image) = self.mesh_to_image([template_mesh, target_mesh])
 
         self.filter.SetFixedImage(template_image)
         self.filter.SetMovingImage(target_image)
