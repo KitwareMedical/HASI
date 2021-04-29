@@ -24,7 +24,7 @@ DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.25
 POINT_SET_METRIC_MAXIMUM_THRESHOLD = 0.0001
 MAX_ITERATIONS = 200
 
-TEMPLATE_MESH_FILE = 'test/Input/template-901-L.obj'
+TEMPLATE_MESH_FILE = 'test/Input/906-R-atlas.obj'
 TARGET_MESH_FILE = 'test/Input/901-R-mesh.vtk'
 
 os.makedirs('test', exist_ok=True)
@@ -32,7 +32,7 @@ os.makedirs('test/Input', exist_ok=True)
 os.makedirs('test/Output', exist_ok=True)
 
 if not os.path.exists(TEMPLATE_MESH_FILE):
-    url = 'https://data.kitware.com/api/v1/file/60762a4b2fa25629b9bbefef/download'
+    url = 'https://data.kitware.com/api/v1/file/608b006d2fa25629b970f139/download'
     urlretrieve(url, TEMPLATE_MESH_FILE)
     
 if not os.path.exists(TARGET_MESH_FILE):
