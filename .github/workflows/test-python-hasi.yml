@@ -1,0 +1,38 @@
+name: Test Python HASI
+
+on: [push,pull_request]
+
+env:
+  ITKBoneEnhancement-git-tag: v0.4.1
+
+jobs:
+  test-python-hasi-package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-18.04, windows-2019, macos-10.15]
+        include:
+          - os: ubuntu-18.04
+          - os: windows-2019
+          - os: macos-10.15
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install ninja
+        python -m pip install itk==5.2.0
+        python -m pip install pytest
+
+    - name: Test with pytest
+      run: |
+        cd src/hasi
+        pytest .
