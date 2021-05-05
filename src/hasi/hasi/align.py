@@ -205,7 +205,7 @@ def register_template_to_sample(template_mesh:itk.Mesh,
                                 verbose=False):
     from .pointsetentropyregistrar import PointSetEntropyRegistrar
 
-    registrar = PointSetEntropyRegistrar()
+    registrar = PointSetEntropyRegistrar(verbose=verbose)
     metric = itk.EuclideanDistancePointSetToPointSetMetricv4[itk.PointSet[itk.F,3]].New()
     transform = itk.Euler3DTransform[itk.D].New()
 
@@ -218,8 +218,7 @@ def register_template_to_sample(template_mesh:itk.Mesh,
                                                     metric=metric,
                                                     transform=transform,
                                                     learning_rate=learning_rate,
-                                                    max_iterations=max_iterations,
-                                                    verbose=verbose)
+                                                    max_iterations=max_iterations)
     return deformed_mesh
 
 
