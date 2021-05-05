@@ -40,7 +40,8 @@ class MeshToMeshRegistrar:
     MeshType = itk.Mesh[itk.F, Dimension]
     PointSetType = itk.PointSet[itk.F, Dimension]
 
-    def __init__(self):
+    def __init__(self,verbose:bool=False):
+        self.verbose = verbose
         self.initialize()
 
     # Abstract method for developer to explicitly reset internal state objects
