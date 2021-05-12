@@ -1,12 +1,23 @@
 #!/usr/bin/env python3
 
-# Filename:     test_meshtomeshregistration.py
-# Contributors: Tom Birdsong
+# Copyright NumFOCUS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0.txt
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # Purpose:  Pytest definitions for mesh-to-mesh registration classes
 #           defined in the src/hasi/hasi module
 
 # Directions:
-# - cd into the src/hasi directory
 # - run `pytest .`
 
 import os
@@ -41,31 +52,6 @@ if not os.path.exists(TARGET_MESH_FILE):
 
 template_mesh = itk.meshread(TEMPLATE_MESH_FILE, itk.F)
 target_mesh = itk.meshread(TARGET_MESH_FILE, itk.F)
-
-# Test base class import and functions
-def test_mesh_to_image():
-    # Class is imported
-    from hasi.meshtomeshregistrar import MeshToMeshRegistrar
-
-    # Class is instantiable
-    registrar = MeshToMeshRegistrar()
-
-    # Initialize runs without error
-    registrar.initialize()
-
-    # Mesh-to-image executes without error
-    img1 = registrar.mesh_to_image(template_mesh)
-
-    # Image was generated
-    assert(type(img1) == itk.Image[itk.F, 3])
-
-    # Mesh-to-image can run with reference image
-    img2 = registrar.mesh_to_image(target_mesh, img1)
-    assert(type(img2) == itk.Image[itk.F, 3])
-
-    # Images occupy the same physical space
-    assert(img2.GetOrigin() == img1.GetOrigin())
-    assert(img2.GetSpacing() == img1.GetSpacing())
 
 # Test registration with mean squares image metric
 def test_meansquares_registration():
