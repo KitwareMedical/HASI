@@ -170,10 +170,8 @@ jobs:
         ./dockcross-manylinux-download-cache-and-build-module-wheels.sh cp${{ matrix.python-version }}
         popd
         cp ITKBoneEnhancement/include/* include/
-        rm ./ITKBoneEnhancement/doxygen-1.8.11.linux.bin.tar.gz
         rm ./ITKBoneEnhancement/ITKPythonBuilds-linux.tar.zst
         mv ./ITKBoneEnhancement/ITKPythonPackage .
-        mv ./ITKBoneEnhancement/tools .
         ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp${{ matrix.python-version }}
 
     - name: Publish Python package as GitHub Artifact
