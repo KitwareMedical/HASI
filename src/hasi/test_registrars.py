@@ -32,7 +32,7 @@ import itk
 
 MEANSQUARES_METRIC_MAXIMUM_THRESHOLD = 0.015
 DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.25
-POINT_SET_METRIC_MAXIMUM_THRESHOLD = 0.0001
+POINT_SET_METRIC_MAXIMUM_THRESHOLD = 0.0236
 MAX_ITERATIONS = 200
 
 TEMPLATE_MESH_FILE = 'test/Input/906-R-atlas.obj'
@@ -55,8 +55,6 @@ target_mesh = itk.meshread(TARGET_MESH_FILE, itk.F)
 
 # Test registration with mean squares image metric
 def test_meansquares_registration():
-    MESH_OUTPUT_FILE = 'test/Output/testMeanSquaresRegisterOutput.vtk'
-
     # Class is imported
     from hasi.meansquaresregistrar import MeanSquaresRegistrar
 
@@ -65,8 +63,7 @@ def test_meansquares_registration():
 
     # Registration executes
     (transform, template_output_mesh) = registrar.register(template_mesh=template_mesh,
-                                            target_mesh=target_mesh,
-                                            filepath=MESH_OUTPUT_FILE)
+                                            target_mesh=target_mesh)
 
     # Mesh was generated
     assert(type(template_output_mesh) == type(template_mesh))
@@ -85,26 +82,11 @@ def test_meansquares_registration():
     # Transform was output
     assert(type(transform) == registrar.TransformType)
 
-    # Mesh was output
-    assert(os.path.isfile(MESH_OUTPUT_FILE))
-
-    # File output matches mesh
-    output_mesh = itk.meshread(MESH_OUTPUT_FILE)
-    assert(output_mesh.GetNumberOfPoints() == \
-        template_output_mesh.GetNumberOfPoints())
-    assert(all(output_mesh.GetPoint(i) == template_output_mesh.GetPoint(i)
-                for i in range(0,output_mesh.GetNumberOfPoints())))
-
     # Resample template
     template_resampled = registrar.resample_template_from_target(template_output_mesh, target_mesh)
 
-    # Clean up
-    os.remove(MESH_OUTPUT_FILE)
-
 # Test registration with diffeomorphic demons image registration
 def test_diffeo_registration():
-    MESH_OUTPUT_FILE = 'test/Output/testDiffeoRegisterOutput.vtk'
-
     # Class is imported
     from hasi.diffeoregistrar import DiffeoRegistrar
 
@@ -113,8 +95,7 @@ def test_diffeo_registration():
 
     # Registration executes without error
     (transform, template_output_mesh) = registrar.register(template_mesh=template_mesh,
-                                                           target_mesh=target_mesh,
-                                                           filepath=MESH_OUTPUT_FILE)
+                                                           target_mesh=target_mesh)
     
     # Transform was output
     assert(type(transform) == registrar.TransformType)
@@ -126,9 +107,6 @@ def test_diffeo_registration():
     assert(template_output_mesh.GetNumberOfPoints() == \
         template_mesh.GetNumberOfPoints())
 
-    # Mesh was output
-    assert(os.path.isfile(MESH_OUTPUT_FILE))
-
     # Optimization converged
     assert(registrar.filter.GetMetric() <
             DIFFEO_METRIC_MAXIMUM_THRESHOLD)
@@ -136,13 +114,7 @@ def test_diffeo_registration():
     # Optimization did not exceed allowable iterations
     assert(registrar.filter.GetElapsedIterations() <= MAX_ITERATIONS)
 
-    # Clean up
-    os.remove(MESH_OUTPUT_FILE)
-
 def test_pointset_registration():
-    MESH_OUTPUT_FILE = 'test/Output/testPointSetRegistrarOutput.vtk'
-    RESAMPLED_OUTPUT_FILE = 'test/Output/testPointSetResampledOutput.vtk'
-
     # Class is imported
     from hasi.pointsetentropyregistrar import PointSetEntropyRegistrar
 
@@ -150,10 +122,12 @@ def test_pointset_registration():
     registrar = PointSetEntropyRegistrar()
 
     # Registration executes without error
+    metric = itk.EuclideanDistancePointSetToPointSetMetricv4[itk.PointSet[itk.F,3]].New()
     (transform, template_output_mesh) = registrar.register(template_mesh=template_mesh,
-                               target_mesh=target_mesh,
-                               filepath=MESH_OUTPUT_FILE,
-                               resample_from_target=False)
+                                                           target_mesh=target_mesh,
+                                                           metric=metric,
+                                                           minimum_convergence_value=1e-6,
+                                                           convergence_window_size=3)
     
     # Transform was output
     assert(type(transform) == registrar.TransformType)
@@ -164,9 +138,6 @@ def test_pointset_registration():
     # Mesh is a transformation of the original template
     assert(template_output_mesh.GetNumberOfPoints() == \
         template_mesh.GetNumberOfPoints())
-
-    # Mesh was output
-    assert(os.path.isfile(MESH_OUTPUT_FILE))
 
     # Optimization converged
     assert(registrar.optimizer.GetCurrentMetricValue() <
@@ -182,6 +153,3 @@ def test_pointset_registration():
     # Mesh is a transformation of the original template
     assert(template_resampled.GetNumberOfPoints() == \
         template_mesh.GetNumberOfPoints())
-
-    # Clean up
-    os.remove(MESH_OUTPUT_FILE)

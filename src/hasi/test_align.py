@@ -30,9 +30,8 @@ if module_path not in sys.path:
 
 import itk
 
-MEANSQUARES_METRIC_MAXIMUM_THRESHOLD = 0.015
-DIFFEO_METRIC_MAXIMUM_THRESHOLD = 0.25
-POINT_SET_METRIC_MAXIMUM_THRESHOLD = 0.0001
+MIN_REFINE_DISTANCE = 0.1
+MAX_REFINE_DISTANCE = 1.0
 MAX_ITERATIONS = 200
 
 TEMPLATE_MESH_FILE = 'test/Input/906-R-atlas.obj'
@@ -182,4 +181,4 @@ def test_refine_template_from_population():
 
     # Distance matches expectation
     distance = get_pairwise_hausdorff_distance(mesh_result, template_mesh)
-    assert(distance > 0.7 and distance < 1.0)
+    assert(MIN_REFINE_DISTANCE < distance < MAX_REFINE_DISTANCE)

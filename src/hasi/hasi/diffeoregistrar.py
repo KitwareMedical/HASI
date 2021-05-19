@@ -27,9 +27,7 @@ from .meshtomeshregistrar import MeshToMeshRegistrar
 
 class DiffeoRegistrar(MeshToMeshRegistrar):
     
-    # Common definitions
-    MAX_ITERATIONS = 200
-
+    # Type definitions for function annotations
     Dimension = 3
     PixelType = itk.F
     ImageType = itk.Image[PixelType, Dimension]
@@ -41,48 +39,50 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
     FixedPointSetType = itk.PointSet[itk.F, Dimension]
 
     MeshType = itk.Mesh[itk.F, Dimension]
+    TransformType = itk.DisplacementFieldTransform[itk.F, Dimension]
+    
+    VectorPixelType = itk.Vector[itk.F, Dimension]
+    DisplacementFieldType = itk.Image[VectorPixelType, Dimension]
+    DiffeoRegistrationFilterType = \
+        itk.DiffeomorphicDemonsRegistrationFilter[ImageType,
+                                                    ImageType,
+                                                    DisplacementFieldType]
 
-    # Definitions for diffeometric registration
+    # Default function values
+    MAX_ITERATIONS = 200
     STANDARD_DEVIATIONS = 1.0
-    TransformType = \
-        itk.DisplacementFieldTransform[itk.F, Dimension]
+    MAX_RMS_ERROR = 0.0
 
-
-    def __init__(self):
-        self.initialize()
+    def __init__(self, verbose:bool=False):
+        super(self.__class__,self).__init__(verbose=verbose)
 
     # Expose method to reset persistent objects as desired
     def initialize(self):
-        VectorPixelType = itk.Vector[itk.F, self.Dimension]
-        DisplacementFieldType = itk.Image[VectorPixelType, self.Dimension]
-        DiffeoRegistrationFilterType = \
-            itk.DiffeomorphicDemonsRegistrationFilter[self.ImageType,
-                                                      self.ImageType,
-                                                      DisplacementFieldType]
-        self.filter = DiffeoRegistrationFilterType.New(
+        self.filter = self.DiffeoRegistrationFilterType.New(
             StandardDeviations=self.STANDARD_DEVIATIONS)
+
+        # Print iteration updates
+        if(self.verbose):
+            def print_iteration():
+                print(f'Iteration: {self.filter.GetElapsedIterations()}'
+                      f' Metric: {self.filter.GetMetric()}'
+                      f' RMS Change: {self.filter.GetRMSChange()}')
+            self.filter.AddObserver(itk.ProgressEvent(),print_iteration)
 
     # Register meshes with diffeomorphic demons algorithm
     def register(self,
                  template_mesh:MeshType,
                  target_mesh:MeshType,
-                 filepath:str=None,
-                 verbose=False,
-                 max_iterations=MAX_ITERATIONS) -> (TransformType, MeshType):
+                 max_iterations:int=MAX_ITERATIONS,
+                 max_rms_error:float=MAX_RMS_ERROR,
+                 verbose=False) -> (TransformType, MeshType):
 
         (template_image, target_image) = self.mesh_to_image([template_mesh, target_mesh])
 
         self.filter.SetFixedImage(template_image)
         self.filter.SetMovingImage(target_image)
-
         self.filter.SetNumberOfIterations(max_iterations)
-      
-        def print_iteration():
-            metric = self.filter.GetMetric()
-            print(f'{metric}')
-
-        if(verbose):
-            self.filter.AddObserver(itk.ProgressEvent(),print_iteration)
+        self.filter.SetMaximumRMSError(max_rms_error)
 
         # Run registration
         self.filter.Update()
@@ -99,10 +99,5 @@ class DiffeoRegistrar(MeshToMeshRegistrar):
         transform_filter = TransformFilterType.New(Input=template_mesh,
             Transform=transform)
         transform_filter.Update()
-
-        if filepath is not None:
-            itk.meshwrite(transform_filter.GetOutput(),filepath)
-            if(verbose):
-                print(f'Wrote resulting mesh to {filepath}')
 
         return (transform, transform_filter.GetOutput())
