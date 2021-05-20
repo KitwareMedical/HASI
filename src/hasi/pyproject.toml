@@ -8,6 +8,7 @@ author = "Kitware Medical"
 author-email = "matt.mccormick@kitware.com"
 home-page = "https://github.com/KitwareMedical/HASI"
 requires = [
+    "itk-shape>=0.2.0",
     "itk-hasi"
 ]
 requires-python=">=3.7"
