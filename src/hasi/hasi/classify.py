@@ -16,7 +16,6 @@
 
 # Purpose: Python functions for shape classification and distance
 #           analysis with DWD classifier
-
 import itk
 import numpy as np
 from dwd.dwd import DWD
@@ -61,26 +60,20 @@ def densityplot(X, y, ax=None):
     ax.axvline(x=0, color='green', linestyle='dashed')
 
     order = sorted(np.unique(y))
-    sns.kdeplot(
-        ax=ax, x=X,
+    sns.kdeplot(ax=ax, x=X,
         color='black',
         common_norm=True,
         common_grid=True,
-        bw_adjust=1.0,
-    )
+        bw_adjust=1.0,)
 
-    sns.kdeplot(
-        ax=ax, x=X,
+    sns.kdeplot(ax=ax, x=X,
         hue=y, hue_order=order,
         common_norm=True,
         common_grid=True,
-        bw_adjust=1.0
-    )
+        bw_adjust=1.0)
 
-    sns.rugplot(
-        ax=ax, x=X,
-        hue=y, hue_order=order,
-    )
+    sns.rugplot(ax=ax, x=X,
+        hue=y, hue_order=order,)
 
     sns.despine()
 
@@ -96,15 +89,13 @@ def density_by(X, category, categories=None):
 
     title = '{} density by {}'.format(variable, category)
 
-    g = sns.FacetGrid(
-        X,
+    g = sns.FacetGrid(X,
         row=category,
         hue=category,
         row_order=categories,
         hue_order=categories,
         aspect=8,
-        height=1
-    )
+        height=1)
 
     g.map(sns.kdeplot, variable, fill=True)
     g.map(plt.axhline, y=0, lw=2)
@@ -112,11 +103,9 @@ def density_by(X, category, categories=None):
 
     def label(x, color, label):
         ax = plt.gca()
-        ax.text(
-            0, .3, label,
+        ax.text(0, .3, label,
             ha='left', va='center',
-            transform=ax.transAxes
-        )
+            transform=ax.transAxes)
 
     g.map(label, category)
 
