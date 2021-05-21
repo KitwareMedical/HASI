@@ -200,14 +200,16 @@ def binary_image_list_to_meshes(images:list, mesh_pixel_type:type=itk.F, object_
 # Register template mesh to sample mesh
 def register_template_to_sample(template_mesh:itk.Mesh,
                                 sample_mesh:itk.Mesh,
-                                learning_rate=1.0,
-                                max_iterations=2000,
-                                verbose=False):
+                                transform=None,
+                                learning_rate:float=1.0,
+                                max_iterations:int=2000,
+                                minimum_convergence_value:float=-1.0,
+                                convergence_window_size:int=1,
+                                verbose=False) -> itk.Mesh:
     from .pointsetentropyregistrar import PointSetEntropyRegistrar
 
     registrar = PointSetEntropyRegistrar(verbose=verbose)
     metric = itk.EuclideanDistancePointSetToPointSetMetricv4[itk.PointSet[itk.F,3]].New()
-    transform = itk.Euler3DTransform[itk.D].New()
 
     # Make a deep copy of the template point set to resample from the target
     template_copy = deep_copy_mesh_vertices(template_mesh)
@@ -218,6 +220,8 @@ def register_template_to_sample(template_mesh:itk.Mesh,
                                                     metric=metric,
                                                     transform=transform,
                                                     learning_rate=learning_rate,
+                                                    minimum_convergence_value=minimum_convergence_value,
+                                                    convergence_window_size=convergence_window_size,
                                                     max_iterations=max_iterations)
     return deformed_mesh
 
