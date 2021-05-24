@@ -13,7 +13,7 @@ except ImportError:
 
 setup(
     name='itk-hasi',
-    version='0.2.1',
+    version='0.2.2',
     author='Kitware Medical',
     author_email='itk+community@discourse.itk.org',
     packages=['itk'],
@@ -44,9 +44,9 @@ setup(
     keywords='ITK InsightToolkit',
     url=r'https://itk.org/',
     install_requires=[
-        r'itk>=5.2.0',
-        r'itk-boneenhancement',
+        r'itk>=5.2.0.post2',
+        r'itk-boneenhancement>=0.4.2',
         r'itk-ioscanco',
-        r'dwd'
+        r'dwd>=1.0.1'
     ]
     )
