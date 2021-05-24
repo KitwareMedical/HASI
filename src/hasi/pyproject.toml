@@ -33,5 +33,6 @@ classifiers = [
 
 [tool.flit.metadata.requires-extra]
 test = [
-    "pytest >=6.2.1"
+    "pytest >=6.2.1",
+    "pytest-dependency>=0.5.1"
 ]

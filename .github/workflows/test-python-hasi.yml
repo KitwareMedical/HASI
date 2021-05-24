@@ -29,6 +29,7 @@ jobs:
         python -m pip install itk-shape==0.2.1
         python -m pip install dwd==1.0.1
         python -m pip install pytest
+        python -m pip install pytest-dependency
 
     - name: Test with pytest
       run: |

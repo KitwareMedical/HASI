@@ -105,3 +105,11 @@ venv.bak/
 
 # Jupyter Notebook example data
 examples/Data/
+examples/Input/
+examples/Output/
+
+# Pytest data
+test/Input/*.nrrd
+test/Input/*.vtk
+test/Input/*.obj
+test/Output/*
