@@ -13,7 +13,7 @@ except ImportError:
 
 setup(
     name='itk-hasi',
-    version='0.2.0',
+    version='0.2.1',
     author='Kitware Medical',
     author_email='itk+community@discourse.itk.org',
     packages=['itk'],
@@ -47,5 +47,6 @@ setup(
         r'itk>=5.2.0',
         r'itk-boneenhancement',
         r'itk-ioscanco',
+        r'dwd'
     ]
     )
