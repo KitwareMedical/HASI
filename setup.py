@@ -46,7 +46,6 @@ setup(
     install_requires=[
         r'itk>=5.2.0.post2',
         r'itk-boneenhancement>=0.4.2',
-        r'itk-ioscanco',
-        r'dwd>=1.0.1'
+        r'itk-ioscanco'
     ]
     )
