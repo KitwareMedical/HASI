@@ -10,7 +10,9 @@ home-page = "https://github.com/KitwareMedical/HASI"
 requires = [
     "itk-hasi>=0.2.2",
     "itk-shape>=0.2.1",
-    "dwd>=1.0.1"
+    "dwd>=1.0.1",
+    "seaborn",
+    "matplotlib"
 ]
 requires-python=">=3.7"
 classifiers = [
@@ -33,5 +35,6 @@ classifiers = [
 
 [tool.flit.metadata.requires-extra]
 test = [
-    "pytest >=6.2.1"
+    "pytest >=6.2.1",
+    "pytest-dependency>=0.5.1"
 ]

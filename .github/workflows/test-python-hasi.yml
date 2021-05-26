@@ -28,7 +28,10 @@ jobs:
         python -m pip install itk==5.2.0.post2
         python -m pip install itk-shape==0.2.1
         python -m pip install dwd==1.0.1
+        python -m pip install seaborn
+        python -m pip install matplotlib
         python -m pip install pytest
+        python -m pip install pytest-dependency
 
     - name: Test with pytest
       run: |
