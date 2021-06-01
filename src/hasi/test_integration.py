@@ -23,6 +23,13 @@
 
 import os
 import sys
+import json
+from pathlib import Path
+
+import fsspec
+from ipfsspec import IPFSFileSystem
+import xarray as xr
+import zarr
 from urllib.request import urlretrieve
 module_path = os.path.abspath(os.path.join('.'))
 
@@ -37,6 +44,10 @@ OUTPUT_DIRECTORY = 'test/Output/'
 MESH_DIRECTORY = 'meshes/'
 CORRESPONDENCE_DIRECTORY = 'registered/'
 
+with fsspec.open("ipfs://bafybeifohvzbdannwme2yzp36sf2xljgo7s4nmrb5jxgrkuo5xih5gb5zq/index.json") as f:
+    DATA_INDEX = json.loads(f.read().decode())
+IPFS_FS = IPFSFileSystem()
+
 IMAGE_FILES = [
     '902-R-femur-label.nrrd',
     '906-R-femur-label.nrrd']
@@ -46,26 +57,11 @@ IMAGE_FILES = [
     #'F9-3wk-02-R-femur-label.nrrd',
     #'F9-8wk-01-R-femur-label.nrrd']
 
-IMAGE_URLS = [
-    'https://data.kitware.com/api/v1/file/60abeaed2fa25629b99afce1/download',
-    'https://data.kitware.com/api/v1/file/60abeaf22fa25629b99afcef/download']
-    #'https://data.kitware.com/api/v1/file/60abeaf52fa25629b99afcfb/download',
-    #'https://data.kitware.com/api/v1/file/60abeaf82fa25629b99afd09/download',
-    #'https://data.kitware.com/api/v1/file/60abeadc2fa25629b99afcb4/download',
-    #'https://data.kitware.com/api/v1/file/60abeae12fa25629b99afcc0/download',
-    #'https://data.kitware.com/api/v1/file/60abeae52fa25629b99afccb/download']
 
 os.makedirs(INPUT_DIRECTORY, exist_ok=True)
 os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
 os.makedirs(OUTPUT_DIRECTORY+MESH_DIRECTORY,exist_ok=True)
 os.makedirs(OUTPUT_DIRECTORY+CORRESPONDENCE_DIRECTORY,exist_ok=True)
-
-for idx in range(len(IMAGE_FILES)):
-    image_file = IMAGE_FILES[idx]
-    if not os.path.exists(INPUT_DIRECTORY + image_file):
-        url = IMAGE_URLS[idx]
-        urlretrieve(url, INPUT_DIRECTORY + image_file)
-
 
 @pytest.mark.dependency()
 def test_create_atlas():
@@ -74,7 +70,13 @@ def test_create_atlas():
     # Read in images
     images = list()
     for image_file in IMAGE_FILES:
-        images.append(itk.imread(INPUT_DIRECTORY + image_file, itk.UC))
+        image_name = str(Path(image_file).stem)
+        cid = DATA_INDEX[image_name]
+        store = IPFS_FS.get_mapper(f'ipfs://{cid}')
+        image_ds = xr.open_zarr(store)
+        image_da = image_ds[image_name]
+        image = itk.image_from_xarray(image_da)
+        images.append(image)
 
     # Paste into standard space
     images = hasi.align.paste_to_common_space(images)

@@ -32,6 +32,7 @@ jobs:
         python -m pip install matplotlib
         python -m pip install pytest
         python -m pip install pytest-dependency
+        python -m pip install ipfsspec xarray zarr
 
     - name: Test with pytest
       run: |
