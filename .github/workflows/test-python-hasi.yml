@@ -2,6 +2,9 @@ name: Test Python HASI
 
 on: [push,pull_request]
 
+env:
+  hasi-testing-data-ipfs-cid: bafybeifqhkoanm5hlo7uf3j4wg3wjenkyb4hwnuqkxeuldtc4dy2vpena4
+
 jobs:
   test-python-hasi-package:
     runs-on: ${{ matrix.os }}
@@ -26,6 +29,10 @@ jobs:
       uses: ibnesayeed/setup-ipfs@master
       with:
         ipfs_version: ^0.8
+
+    - name: Pin ipfs testing data locally
+      run: |
+        ipfs pin add -- ${{ env.hasi-testing-data-ipfs-cid }}
 
     - name: Install build dependencies
       run: |
