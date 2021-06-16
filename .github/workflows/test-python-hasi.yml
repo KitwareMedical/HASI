@@ -3,7 +3,7 @@ name: Test Python HASI
 on: [push,pull_request]
 
 env:
-  hasi-testing-data-ipfs-cid: bafybeifqhkoanm5hlo7uf3j4wg3wjenkyb4hwnuqkxeuldtc4dy2vpena4
+  hasi-testing-data-ipfs-cid: bafybeihvca4e6ik3twyz5qdz3f33woqpzorrcfwkh47tp3wwpxuuggmbey
 
 jobs:
   test-python-hasi-package:
