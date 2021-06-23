@@ -60,7 +60,7 @@ itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
   {
     std::cerr << "Missing parameters." << std::endl;
     std::cerr << "Usage: " << itkNameOfTestExecutableMacro(argv);
-    std::cerr << " <inputImage> <outputImage> [corticalThickness]";
+    std::cerr << " <inputImage> <outputImage> [corticalThickness] [wholeBones]";
     std::cerr << std::endl;
     return EXIT_FAILURE;
   }
@@ -71,6 +71,12 @@ itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
   if (argc > 3)
   {
     corticalThickness = std::stof(argv[3]);
+  }
+
+  bool wholeBones = false;
+  if (argc > 4)
+  {
+    wholeBones = std::stoi(argv[4]);
   }
 
   constexpr unsigned int Dimension = 3;
@@ -94,6 +100,7 @@ itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
   filter->AddObserver(itk::ProgressEvent(), showProgress);
   filter->SetInput(image);
   filter->SetCorticalBoneThickness(corticalThickness);
+  filter->SetWholeBones(wholeBones);
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
 
   std::cout << "Writing label map: " << outputImageFileName << std::endl;

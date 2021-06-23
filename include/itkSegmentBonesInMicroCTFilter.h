@@ -66,6 +66,14 @@ public:
   itkGetConstMacro(CorticalBoneThickness, float);
   itkSetMacro(CorticalBoneThickness, float);
 
+  /** If true (default), each bone has one label.
+   * If false, each bone has 3 labels:
+   * one for cortical bone,
+   * one for trabecular bone and
+   * one for bone marrow. */
+  itkGetConstMacro(WholeBones, bool);
+  itkSetMacro(WholeBones, bool);
+
 protected:
   SegmentBonesInMicroCTFilter() = default;
   ~SegmentBonesInMicroCTFilter() override = default;
@@ -105,6 +113,7 @@ protected:
 
 private:
   float m_CorticalBoneThickness = 0.1;
+  bool  m_WholeBones = true;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(CTInputPixelIsSigned, (itk::Concept::Signed<typename InputImageType::PixelType>));

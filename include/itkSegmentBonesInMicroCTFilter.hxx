@@ -454,7 +454,7 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::GenerateData()
     // now combine them, clipping them to the boneBasin
     mt->ParallelizeImageRegion<Dimension>(
       safeBoneRegion,
-      [finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, background](const RegionType region) {
+      [finalBones, erodedMarrow, dilatedBone, cortexLabel, boneBasin, bone, this](const RegionType region) {
         ImageRegionConstIterator<TOutputImage> mIt(erodedMarrow, region);
         ImageRegionConstIterator<TOutputImage> bIt(dilatedBone, region);
         ImageRegionConstIterator<TOutputImage> cIt(cortexLabel, region);
@@ -464,17 +464,27 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::GenerateData()
         {
           if (iIt.Get())
           {
-            if (cIt.Get())
+            if (this->m_WholeBones)
             {
-              oIt.Set(3 * bone - 2);
+              if (cIt.Get() || bIt.Get() || mIt.Get())
+              {
+                oIt.Set(bone);
+              }
             }
-            else if (bIt.Get())
+            else // split bones
             {
-              oIt.Set(3 * bone - 1);
-            }
-            else if (mIt.Get())
-            {
-              oIt.Set(3 * bone);
+              if (cIt.Get())
+              {
+                oIt.Set(3 * bone - 2);
+              }
+              else if (bIt.Get())
+              {
+                oIt.Set(3 * bone - 1);
+              }
+              else if (mIt.Get())
+              {
+                oIt.Set(3 * bone);
+              }
             }
           }
           // else this is background
