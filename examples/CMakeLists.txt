@@ -10,7 +10,7 @@ if(NOT CMAKE_CXX_EXTENSIONS)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
-project(HASI CXX) # High-throughput Application for Skeletal Imaging
+project(HASI_Examples CXX) # High-throughput Application for Skeletal Imaging
 
 find_package(ITK 5 REQUIRED
   COMPONENTS
