@@ -21,11 +21,7 @@ ReadImage(std::string filename)
   std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Reading " << filename << std::endl;
 
-  using ReaderType = itk::ImageFileReader<TImage>;
-  typename ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(filename);
-  reader->Update();
-  itk::SmartPointer<TImage> out = reader->GetOutput();
+  itk::SmartPointer<TImage> out = itk::ReadImage<TImage>(filename);
   out->DisconnectPipeline();
 
   diff = std::chrono::steady_clock::now() - startTime;
@@ -40,12 +36,7 @@ WriteImage(itk::SmartPointer<TImage> out, std::string filename, bool compress)
   std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Writing " << filename << std::endl;
 
-  using WriterType = itk::ImageFileWriter<TImage>;
-  typename WriterType::Pointer w = WriterType::New();
-  w->SetInput(out);
-  w->SetFileName(filename);
-  w->SetUseCompression(compress);
-  w->Update();
+  itk::WriteImage(out, filename, compress);
 
   diff = std::chrono::steady_clock::now() - startTime;
   std::cout << diff.count() << " Done!" << std::endl;

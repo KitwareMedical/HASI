@@ -23,27 +23,9 @@ auto     startTime = std::chrono::steady_clock::now();
 unsigned runDebugLevel = 0;
 
 template <typename TImage>
-itk::SmartPointer<TImage>
-ReadImage(std::string filename)
-{
-  using ReaderType = itk::ImageFileReader<TImage>;
-  typename ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(filename);
-  reader->Update();
-  itk::SmartPointer<TImage> out = reader->GetOutput();
-  out->DisconnectPipeline();
-  return out;
-}
-
-template <typename TImage>
 void
 UpdateAndWrite(TImage * out, std::string filename, bool compress, unsigned debugLevel)
 {
-  using WriterType = itk::ImageFileWriter<TImage>;
-  typename WriterType::Pointer w = WriterType::New();
-  w->SetInput(out);
-  w->SetFileName(filename);
-  w->SetUseCompression(compress);
   try
   {
     std::chrono::duration<double> diff = std::chrono::steady_clock::now() - startTime;
@@ -54,7 +36,7 @@ UpdateAndWrite(TImage * out, std::string filename, bool compress, unsigned debug
     {
       diff = std::chrono::steady_clock::now() - startTime;
       std::cout << diff.count() << " Writing " << filename << std::endl;
-      w->Update();
+      itk::WriteImage(out, filename, compress);
     }
 
     diff = std::chrono::steady_clock::now() - startTime;
@@ -583,7 +565,7 @@ main(int argc, char * argv[])
     using InputPixelType = short;
     using InputImageType = itk::Image<InputPixelType, ImageDimension>;
 
-    typename InputImageType::Pointer image = ReadImage<InputImageType>(inputFileName);
+    typename InputImageType::Pointer image = itk::ReadImage<InputImageType>(inputFileName);
 
     using MedianType = itk::MedianImageFilter<InputImageType, InputImageType>;
     MedianType::Pointer median = MedianType::New();

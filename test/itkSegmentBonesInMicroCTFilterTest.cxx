@@ -89,11 +89,8 @@ itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
   ITK_EXERCISE_BASIC_OBJECT_METHODS(filter, SegmentBonesInMicroCTFilter, ImageToImageFilter);
 
   std::cout << "Reading image: " << inputImageFileName << std::endl;
-  using ReaderType = itk::ImageFileReader<ImageType>;
-  typename ReaderType::Pointer reader = ReaderType::New();
-  reader->SetFileName(inputImageFileName);
-  ITK_TRY_EXPECT_NO_EXCEPTION(reader->Update());
-  ImageType::Pointer image = reader->GetOutput();
+  ImageType::Pointer image;
+  ITK_TRY_EXPECT_NO_EXCEPTION(image = itk::ReadImage<ImageType>(inputImageFileName));
 
   std::cout << "Running the filter" << std::endl;
   ShowProgress::Pointer showProgress = ShowProgress::New();
@@ -104,12 +101,7 @@ itkSegmentBonesInMicroCTFilterTest(int argc, char * argv[])
   ITK_TRY_EXPECT_NO_EXCEPTION(filter->Update());
 
   std::cout << "Writing label map: " << outputImageFileName << std::endl;
-  using WriterType = itk::ImageFileWriter<ImageType>;
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetFileName(outputImageFileName);
-  writer->SetInput(filter->GetOutput());
-  writer->SetUseCompression(true);
-  ITK_TRY_EXPECT_NO_EXCEPTION(writer->Update());
+  ITK_TRY_EXPECT_NO_EXCEPTION(itk::WriteImage(filter->GetOutput(), outputImageFileName, true));
 
   std::cout << "Test finished successfully." << std::endl;
   return EXIT_SUCCESS;
