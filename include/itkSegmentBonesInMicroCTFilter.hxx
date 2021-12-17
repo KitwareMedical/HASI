@@ -18,7 +18,6 @@
 #ifndef itkSegmentBonesInMicroCTFilter_hxx
 #define itkSegmentBonesInMicroCTFilter_hxx
 
-#include "itkSegmentBonesInMicroCTFilter.h"
 
 #include "itkArray.h"
 #include "itkMedianImageFilter.h"
