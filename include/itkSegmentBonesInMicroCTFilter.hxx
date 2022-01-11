@@ -195,7 +195,6 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::GenerateData()
     progress->RegisterInternalFilter(multiScaleFilter, 0.5f);
     multiScaleFilter->Update();
 
-    using FloatThresholdType = BinaryThresholdImageFilter<RealImageType, TOutputImage>;
     typename FloatThresholdType::Pointer descoTh = FloatThresholdType::New();
     descoTh->SetInput(multiScaleFilter->GetOutput());
     descoTh->SetLowerThreshold(0.1);
