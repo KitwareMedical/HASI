@@ -18,7 +18,6 @@
 #ifndef itkLandmarkAtlasSegmentationFilter_hxx
 #define itkLandmarkAtlasSegmentationFilter_hxx
 
-#include "itkLandmarkAtlasSegmentationFilter.h"
 
 #include "itkLandmarkBasedTransformInitializer.h"
 #include "itkResampleImageFilter.h"
