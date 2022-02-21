@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.16.3)
 
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 11) # Supported values are ``11``, ``14``, and ``17``.
+  set(CMAKE_CXX_STANDARD 14) # Supported values are ``11``, ``14``, and ``17``.
 endif()
 if(NOT CMAKE_CXX_STANDARD_REQUIRED)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
