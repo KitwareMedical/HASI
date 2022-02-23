@@ -19,8 +19,8 @@
 import itk
 import os
 from pathlib import Path
+import subprocess
 import sys
-import traceback
 
 
 def sorted_file_list(folder, extension):
@@ -206,7 +206,6 @@ def process_case(root_dir, bone, case, bone_label, atlas):
     print(f'Writing deformed atlas to {registered_label_file}')
     itk.imwrite(result_image, registered_label_file, compression=True)
 
-
     print('Computing morphometry features')
     morphometry_filter = itk.BoneMorphometryFeaturesFilter[type(atlas_aa_image)].New(case_bone_image)
     morphometry_filter.SetMaskImage(result_image)
@@ -290,18 +289,30 @@ def main_processing(root_dir, bone, atlas, bone_label):
     print(f'Writing {bone} variant of atlas image to file: {atlas_bone_image_filename}')
     itk.imwrite(atlas_aa_image.astype(itk.SS), atlas_bone_image_filename)
 
-
     # now go through all the cases, doing main processing
     for case in data_list:
         print(u'\u2500' * 80)
         print(f'Processing case {case}')
 
-        process_case(root_dir, bone, case, bone_label, atlas)
+        # process_case(root_dir, bone, case, bone_label, atlas)
 
-        print(f'Done processing case {case}')
+        # Elastix crashes on second iteration of this for loop,
+        # so we use subprocess as a work-around
+        status = subprocess.run(['python', __file__, root_dir, bone, case, str(bone_label), atlas])
+        if status.returncode != 0:
+            print(f'Case {case} failed with error {status.returncode}')
+        else:
+            print(f'Success processing case {case}')
 
 
-# main code
-main_processing('../../', 'Tibia', '901-R', 2)
-main_processing('../../', 'Tibia', '901-L', 2)
-main_processing('../../', 'Femur', '907-L', 1)
+if __name__ == '__main__':
+    if len(sys.argv) == 6:  # this is the subprocess call
+        process_case(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5])
+    elif len(sys.argv) == 1:  # direct invocation
+        main_processing('../../', 'Tibia', '901-R', 2)
+        main_processing('../../', 'Tibia', '901-L', 2)
+        main_processing('../../', 'Femur', '907-L', 1)
+    else:
+        print(f'Invalid number of arguments: {len(sys.argv)}. Invoke the script with no arguments.')
+        sys.exit(len(sys.argv))
+
