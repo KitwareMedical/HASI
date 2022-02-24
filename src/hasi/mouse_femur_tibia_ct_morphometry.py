@@ -208,13 +208,30 @@ def process_case(root_dir, bone, case, bone_label, atlas):
 
     print('Computing morphometry features')
     morphometry_filter = itk.BoneMorphometryFeaturesFilter[type(atlas_aa_image)].New(case_bone_image)
-    morphometry_filter.SetMaskImage(result_image)
-    morphometry_filter.Update()
-    print('BVTV', morphometry_filter.GetBVTV())
-    print('TbN', morphometry_filter.GetTbN())
-    print('TbTh', morphometry_filter.GetTbTh())
-    print('TbSp', morphometry_filter.GetTbSp())
-    print('BSBV', morphometry_filter.GetBSBV())
+    label_names = {
+        1: 'Diaphysis',
+        2: 'Metaphysis',
+        3: 'Growth Plate',
+        4: 'Epiphysis',
+    }
+    for label in label_names:
+        print(f'Label {label_names[label]}')
+        label_region = itk.binary_threshold_image_filter(
+            result_image, lower_threshold=label, upper_threshold=label)
+        morphometry_filter.SetMaskImage(label_region)
+        morphometry_filter.Update()
+
+        csv_filename = root_dir + bone + '/' + atlas + '-BoneMorphometry.csv'
+        with open(csv_filename, 'a') as morphometry_csv:
+            # Bone,Atlas,Case,Label, BVTV,TbN,TbTh,TbSp,BSBV. For description of measurements see:
+            # https://github.com/InsightSoftwareConsortium/ITKBoneMorphometry/blob/v1.3.0/include/itkBoneMorphometryFeaturesFilter.h#L35-L36
+            morphometry_csv.write(f'{bone},{atlas},{case},{label_names[label]}')
+            morphometry_csv.write(f',{morphometry_filter.GetBVTV()}')
+            morphometry_csv.write(f',{morphometry_filter.GetTbN()}')
+            morphometry_csv.write(f',{morphometry_filter.GetTbTh()}')
+            morphometry_csv.write(f',{morphometry_filter.GetTbSp()}')
+            morphometry_csv.write(f',{morphometry_filter.GetBSBV()}')
+            morphometry_csv.write('\n')
 
     print('Generate the mesh from the segmented case')
     padded_segmentation = itk.constant_pad_image_filter(
@@ -291,6 +308,10 @@ def main_processing(root_dir, bone, atlas, bone_label):
     print(f'Writing {bone} variant of atlas image to file: {atlas_bone_image_filename}')
     itk.imwrite(atlas_aa_image.astype(itk.SS), atlas_bone_image_filename)
 
+    csv_filename = root_dir + bone + '/' + atlas + '-BoneMorphometry.csv'
+    with open(csv_filename, 'w') as morphometry_csv:
+        morphometry_csv.write('Bone,Atlas,Case,Label,BVTV,TbN,TbTh,TbSp,BSBV\n')
+
     # now go through all the cases, doing main processing
     for case in data_list:
         print(u'\u2500' * 80)
@@ -321,4 +342,3 @@ if __name__ == '__main__':
     else:
         print(f'Invalid number of arguments: {len(sys.argv)}. Invoke the script with no arguments.')
         sys.exit(len(sys.argv))
-
