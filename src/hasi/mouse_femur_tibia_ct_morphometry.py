@@ -242,15 +242,16 @@ def main_processing(root_dir, bone, atlas, bone_label):
     root_dir = os.path.abspath(root_dir) + '/'
     data_list = sorted_file_list(root_dir + 'Data', '.nrrd')
     if atlas not in data_list:
-        raise RuntimeError("Missing data file for the atlas")
+        raise RuntimeError('Missing data file for the atlas')
     data_list.remove(atlas)
 
     landmarks_list = sorted_file_list(root_dir + bone, '.fcsv')
     if atlas not in landmarks_list:
-        raise RuntimeError("Missing landmarks file for the atlas")
-    landmarks_list.remove(atlas)
+        print('Missing landmarks file for the atlas')
+    else:
+        landmarks_list.remove(atlas)
     if 'Pose' not in landmarks_list:
-        raise RuntimeError("Missing Pose.fcsv file")
+        raise RuntimeError('Missing Pose.fcsv file')
     landmarks_list.remove('Pose')
 
     # check if there are any discrepancies
@@ -258,6 +259,7 @@ def main_processing(root_dir, bone, atlas, bone_label):
         print('There is a discrepancy between data_list and landmarks_list')
         print('data_list:', data_list)
         print('landmarks_list:', landmarks_list)
+        sys.exit(1)
     print(f'List of cases to process: {data_list}')
 
     atlas_image_filename = root_dir + bone + '/' + atlas + '-AA.nrrd'
@@ -280,7 +282,7 @@ def main_processing(root_dir, bone, atlas, bone_label):
         region_of_interest=atlas_bounding_box)
     atlas_bone_label_filename = root_dir + bone + '/' + atlas + '-AA-' + bone + '-label.nrrd'
     print(f'Writing {bone} variant of atlas labels to file: {atlas_bone_label_filename}')
-    itk.imwrite(atlas_aa_segmentation, atlas_bone_label_filename)
+    itk.imwrite(atlas_aa_segmentation, atlas_bone_label_filename, compression=True)
 
     atlas_aa_image = itk.region_of_interest_image_filter(
         atlas_aa_image,
@@ -304,14 +306,18 @@ def main_processing(root_dir, bone, atlas, bone_label):
         else:
             print(f'Success processing case {case}')
 
+    print(f'Processed {len(data_list)} cases for bone {bone} using {atlas} as atlas.\n\n\n')
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 6:  # this is the subprocess call
         process_case(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5])
     elif len(sys.argv) == 1:  # direct invocation
-        main_processing('../../', 'Tibia', '901-R', 2)
-        main_processing('../../', 'Tibia', '901-L', 2)
         main_processing('../../', 'Femur', '907-L', 1)
+        main_processing('../../', 'Femur', '907-R', 1)
+        main_processing('../../', 'Tibia', '901-L', 2)
+        main_processing('../../', 'Tibia', '901-R', 2)
+        # TODO: add for loops here to do this for all available atlases
     else:
         print(f'Invalid number of arguments: {len(sys.argv)}. Invoke the script with no arguments.')
         sys.exit(len(sys.argv))
