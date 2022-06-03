@@ -172,6 +172,7 @@ jobs:
         cp ITKBoneEnhancement/include/* include/
         rm ./ITKBoneEnhancement/ITKPythonBuilds-linux.tar.zst
         mv ./ITKBoneEnhancement/ITKPythonPackage .
+        ln -s ./ITKPythonPackage/oneTBB-prefix .
         ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp${{ matrix.python-version }}
 
     - name: Publish Python package as GitHub Artifact
