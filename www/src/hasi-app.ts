@@ -1,119 +1,78 @@
 import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import litLogo from "./assets/lit.svg";
+import { customElement } from "lit/decorators.js";
+import { Router } from "@lit-labs/router";
+import "@material/web/navigationdrawer/navigation-drawer.js";
+import "@material/web/button/filled-link-button.js";
+
+import "./top-app-bar.js";
+
+const appTitle = "Osteoarthritis Biomarker Analysis";
 
 /**
- * An example element.
+ * Hasi entry point
  *
- * @slot - This element has a slot
- * @csspart button - The button
  */
 @customElement("hasi-app")
 export class HasiApp extends LitElement {
-  /**
-   * Copy for the read the docs hint.
-   */
-  @property()
-  docsHint = "Click on the Vite and Lit logos to learn more";
-
-  /**
-   * The number of times the button has been clicked.
-   */
-  @property({ type: Number })
-  count = 0;
+  private _routes = new Router(this, [
+    { path: "/", render: () => html`<h1>Population</h1>` },
+    { path: "/individual", render: () => html`<h1>Individual</h1>` },
+    { path: "/processing", render: () => html`<h1>Processing</h1>` },
+  ]);
 
   render() {
     return html`
+      <md-navigation-drawer opened="true">
+        <h3>${appTitle}</h3>
+        <md-filled-link-button
+          label="Population"
+          href="/"
+        ></md-filled-link-button>
+        <md-filled-link-button
+          label="Individual"
+          href="individual"
+        ></md-filled-link-button>
+        <md-filled-link-button
+          label="Processing"
+          href="processing"
+        ></md-filled-link-button>
+      </md-navigation-drawer>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" class="logo" alt="Vite logo" />
-        </a>
-        <a href="https://lit.dev" target="_blank">
-          <img src=${litLogo} class="logo lit" alt="Lit logo" />
-        </a>
+        <top-app-bar>
+          <h1>${this._routes.outlet()}</h1>
+        </top-app-bar>
+        <div class="main-content">
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
+            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+            aliquip ex ea commodo consequat. Duis aute irure dolor in
+            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+            culpa qui officia deserunt mollit anim id est laborum.
+          </p>
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
+            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+            aliquip ex ea commodo consequat. Duis aute irure dolor in
+            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+            culpa qui officia deserunt mollit anim id est laborum.
+          </p>
+        </div>
       </div>
-      <slot></slot>
-      <div class="card">
-        <button @click=${this._onClick} part="button">
-          count is ${this.count}
-        </button>
-      </div>
-      <p class="read-the-docs">${this.docsHint}</p>
     `;
   }
-
-  private _onClick() {
-    this.count++;
-  }
-
   static styles = css`
     :host {
+      display: flex;
+    }
+
+    .main-content {
       max-width: 1280px;
       margin: 0 auto;
       padding: 2rem;
-      text-align: center;
-    }
-
-    .logo {
-      height: 6em;
-      padding: 1.5em;
-      will-change: filter;
-    }
-    .logo:hover {
-      filter: drop-shadow(0 0 2em #646cffaa);
-    }
-    .logo.lit:hover {
-      filter: drop-shadow(0 0 2em #325cffaa);
-    }
-
-    .card {
-      padding: 2em;
-    }
-
-    .read-the-docs {
-      color: #888;
-    }
-
-    h1 {
-      font-size: 3.2em;
-      line-height: 1.1;
-    }
-
-    a {
-      font-weight: 500;
-      color: #646cff;
-      text-decoration: inherit;
-    }
-    a:hover {
-      color: #535bf2;
-    }
-
-    button {
-      border-radius: 8px;
-      border: 1px solid transparent;
-      padding: 0.6em 1.2em;
-      font-size: 1em;
-      font-weight: 500;
-      font-family: inherit;
-      background-color: #1a1a1a;
-      cursor: pointer;
-      transition: border-color 0.25s;
-    }
-    button:hover {
-      border-color: #646cff;
-    }
-    button:focus,
-    button:focus-visible {
-      outline: 4px auto -webkit-focus-ring-color;
-    }
-
-    @media (prefers-color-scheme: light) {
-      a:hover {
-        color: #747bff;
-      }
-      button {
-        background-color: #f9f9f9;
-      }
     }
   `;
 }
