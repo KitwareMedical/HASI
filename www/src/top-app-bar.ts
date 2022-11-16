@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 
 /**
  * title
@@ -7,12 +7,9 @@ import { customElement } from "lit/decorators.js";
  */
 @customElement("top-app-bar")
 export class TopAppBar extends LitElement {
+  @property() title: string = "title";
   render() {
-    return html`
-      <div>
-        <slot></slot>
-      </div>
-    `;
+    return html`<h1>${this.title}</h1>`;
   }
   static styles = css`
     :host {

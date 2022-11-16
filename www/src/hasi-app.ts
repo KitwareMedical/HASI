@@ -1,10 +1,42 @@
-import { LitElement, css, html } from "lit";
+import { html, literal } from "lit/static-html.js";
+import { LitElement, css } from "lit";
 import { customElement } from "lit/decorators.js";
 import { Router } from "@lit-labs/router";
 import "@material/web/navigationdrawer/navigation-drawer.js";
 import "@material/web/button/filled-link-button.js";
+import "@material/web/list/list.js";
+import "@material/web/list/list-item.js";
 
 import "./top-app-bar.js";
+import "./population-root.js";
+import "./individual-root.js";
+import "./processing-root.js";
+
+const PAGES = {
+  population: { title: "Population", path: "/", tag: literal`population-root` },
+  individual: {
+    title: "Individual",
+    path: "/individual",
+    tag: literal`individual-root`,
+  },
+  processing: {
+    title: "Processing",
+    path: "/processing",
+    tag: literal`processing-root`,
+  },
+};
+
+const PAGE_ITEMS = Object.values(PAGES).map(
+  ({ path, title }) => html`
+    <md-list-item>
+      <md-filled-link-button
+        label="${title}"
+        href="${path}"
+        slot="start"
+      ></md-filled-link-button>
+    </md-list-item>
+  `
+);
 
 const appTitle = "Osteoarthritis Biomarker Analysis";
 
@@ -14,65 +46,36 @@ const appTitle = "Osteoarthritis Biomarker Analysis";
  */
 @customElement("hasi-app")
 export class HasiApp extends LitElement {
-  private _routes = new Router(this, [
-    { path: "/", render: () => html`<h1>Population</h1>` },
-    { path: "/individual", render: () => html`<h1>Individual</h1>` },
-    { path: "/processing", render: () => html`<h1>Processing</h1>` },
-  ]);
+  private _routes = new Router(
+    this,
+    Object.values(PAGES).map(({ path, tag }) => {
+      return {
+        path,
+        render: () => html`<${tag}></${tag}>`,
+      };
+    })
+  );
 
   render() {
     return html`
       <md-navigation-drawer opened="true">
         <h3>${appTitle}</h3>
-        <md-filled-link-button
-          label="Population"
-          href="/"
-        ></md-filled-link-button>
-        <md-filled-link-button
-          label="Individual"
-          href="individual"
-        ></md-filled-link-button>
-        <md-filled-link-button
-          label="Processing"
-          href="processing"
-        ></md-filled-link-button>
+        <md-list role="menu"> ${PAGE_ITEMS} </md-list>
       </md-navigation-drawer>
-      <div>
-        <top-app-bar>
-          <h1>${this._routes.outlet()}</h1>
-        </top-app-bar>
-        <div class="main-content">
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
-          </p>
-        </div>
-      </div>
+      <div class="main-content">${this._routes.outlet()}</div>
     `;
   }
   static styles = css`
     :host {
+      height: 100%;
+      width: 100%;
+
+      padding: 10px;
       display: flex;
     }
 
     .main-content {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 2rem;
+      flex: 1;
     }
   `;
 }

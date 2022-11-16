@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@lit-labs/router": "^0.1.1",
-    "@material/web": "0.1.0-alpha.0",
+    "@material/web": "github:material-components/material-web#e8ba229dd09d98a3ab68d667bf8c7f0df69daa53",
     "lit": "^2.4.0"
   },
   "devDependencies": {
