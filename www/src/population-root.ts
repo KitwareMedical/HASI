@@ -1,21 +1,18 @@
 import { LitElement, css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 
-/**
- * title
- *
- */
 @customElement("population-root")
 export class PopulationRoot extends LitElement {
   render() {
     return html`
-      <top-app-bar title="Population"> </top-app-bar>
+      <h2>Population</h2>
       <div class="main-layout">
         <div>Charts and Biomarkers</div>
         <div>Image Viewer</div>
       </div>
     `;
   }
+
   static styles = css`
     :host {
       height: 100%;
