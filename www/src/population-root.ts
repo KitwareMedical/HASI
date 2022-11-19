@@ -1,13 +1,15 @@
 import { LitElement, css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 
+import "./plot-params";
+
 @customElement("population-root")
 export class PopulationRoot extends LitElement {
   render() {
     return html`
       <h2>Population</h2>
       <div class="main-layout">
-        <div>Charts and Biomarkers</div>
+        <plot-params> </plot-params>
         <div>Image Viewer</div>
       </div>
     `;
@@ -26,7 +28,7 @@ export class PopulationRoot extends LitElement {
       flex-direction: column;
     }
 
-    .main-layout > div {
+    .main-layout > * {
       flex: 1;
     }
   `;

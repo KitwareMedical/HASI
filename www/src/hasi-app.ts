@@ -2,10 +2,6 @@ import { html } from "lit/static-html.js";
 import { LitElement, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { Router } from "@lit-labs/router";
-import "@material/web/navigationdrawer/navigation-drawer.js";
-import "@material/web/button/filled-link-button.js";
-import "@material/web/list/list.js";
-import "@material/web/list/list-item.js";
 
 import "./top-app-bar.js";
 import "./nav-menu.js";
@@ -51,6 +47,7 @@ export class HasiApp extends LitElement {
       </div>
     `;
   }
+
   static styles = css`
     :host {
       height: 100%;

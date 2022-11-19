@@ -2,14 +2,14 @@ lockfileVersion: 5.4
 
 specifiers:
   '@lit-labs/router': ^0.1.1
-  '@material/web': github:material-components/material-web#e8ba229dd09d98a3ab68d667bf8c7f0df69daa53
+  '@material/web': npm:material-web-hasi@0.1.0-alpha.0
   lit: ^2.4.0
   typescript: ^4.6.4
   vite: ^3.2.3
 
 dependencies:
   '@lit-labs/router': 0.1.1
-  '@material/web': 0.1.0-alpha.0
+  '@material/web': /material-web-hasi/0.1.0-alpha.0
   lit: 2.4.1
 
 devDependencies:
@@ -44,13 +44,6 @@ packages:
 
   /@lit/reactive-element/1.4.2:
     resolution: {integrity: sha512-VMOxsWh/QDwrxPsgkSQnuZ+8mfNy1OTjzzUdLBvvZtpahwPTHTeVZ51RZRqO4xfKVrR+btIPA8D01IL3xeG66w==}
-    dev: false
-
-  /@material/web/0.1.0-alpha.0:
-    resolution: {integrity: sha512-GNsNyWOtYKezXwvrD1ZBfnOHClVya31ZEQH1O83+PsPqlVZK6cBfnf1cwJmEFQ6FezB6q6q+cHGGqx0lb90Jug==}
-    dependencies:
-      lit: 2.4.1
-      tslib: 2.4.1
     dev: false
 
   /@types/trusted-types/2.0.2:
@@ -311,6 +304,13 @@ packages:
       '@lit/reactive-element': 1.4.2
       lit-element: 3.2.2
       lit-html: 2.4.0
+    dev: false
+
+  /material-web-hasi/0.1.0-alpha.0:
+    resolution: {integrity: sha512-TW97o7OTGntGvavF6XjhJ5jpate5IqtvmhCOhWoQ8TKVBWsrxYTtfNDfXYru5DNtHLVm4ocLMvy7VigEw20+3w==}
+    dependencies:
+      lit: 2.4.1
+      tslib: 2.4.1
     dev: false
 
   /nanoid/3.3.4:
