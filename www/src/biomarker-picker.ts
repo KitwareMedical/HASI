@@ -11,7 +11,7 @@ export class BiomarkerPicker extends LitElement {
     return html`
       <md-outlined-autocomplete label=${this.parameter}>
         <md-autocomplete-item headline="age"></md-autocomplete-item>
-        <md-autocomplete-item headline="weight"> </md-autocomplete-item>
+        <md-autocomplete-item headline="weight"></md-autocomplete-item>
       </md-outlined-autocomplete>
     `;
   }

@@ -1,7 +1,6 @@
 import { LitElement, html, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import "@material/web/navigationdrawer/navigation-drawer.js";
-import "@material/web/button/filled-link-button.js";
 import "@material/web/list/list.js";
 import "@material/web/list/list-item.js";
 
@@ -21,13 +20,9 @@ export class NavMenu extends LitElement {
         <md-list role="menu">
           ${Object.values(PAGES).map(
             ({ path, title }) => html`
-              <md-list-item>
-                <md-filled-link-button
-                  label="${title}"
-                  href="${path}"
-                  slot="start"
-                ></md-filled-link-button>
-              </md-list-item>
+              <a href=${path}>
+                <md-list-item headline=${title}> </md-list-item>
+              </a>
             `
           )}
         </md-list>

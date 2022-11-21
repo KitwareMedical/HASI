@@ -2,6 +2,10 @@ import { html } from "lit/static-html.js";
 import { LitElement, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { Router } from "@lit-labs/router";
+// @ts-ignore: Property 'UrlPattern' does not exist
+if (!globalThis.URLPattern) {
+  await import("urlpattern-polyfill");
+}
 
 import "./top-app-bar.js";
 import "./nav-menu.js";

@@ -11,7 +11,8 @@
   "dependencies": {
     "@lit-labs/router": "^0.1.1",
     "@material/web": "npm:material-web-hasi@0.1.0-alpha.0",
-    "lit": "^2.4.0"
+    "lit": "^2.4.0",
+    "urlpattern-polyfill": "^6.0.2"
   },
   "devDependencies": {
     "typescript": "^4.6.4",
