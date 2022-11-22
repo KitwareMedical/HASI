@@ -1,7 +1,8 @@
 import { LitElement, css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import "./plot-params";
+import "./plot-params.js";
+import "./scan-table.js";
 
 @customElement("population-root")
 export class PopulationRoot extends LitElement {
@@ -9,7 +10,8 @@ export class PopulationRoot extends LitElement {
     return html`
       <h2>Population</h2>
       <div class="main-layout">
-        <plot-params> </plot-params>
+        <scan-table></scan-table>
+        <plot-params></plot-params>
         <div>Image Viewer</div>
       </div>
     `;

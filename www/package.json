@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "@lit-labs/router": "^0.1.1",
+    "@lumino/datagrid": "^0.36.5",
+    "@lumino/default-theme": "^0.22.5",
+    "@lumino/dragdrop": "^1.14.3",
+    "@lumino/widgets": "^1.35.0",
     "@material/web": "npm:material-web-hasi@0.1.0-alpha.0",
     "lit": "^2.4.0",
     "urlpattern-polyfill": "^6.0.2"
