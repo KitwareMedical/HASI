@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "build": "tsc && vite build"
+    "build:typegen": "xstate typegen \"./src/**/*.ts?(x)\"",
+    "build": "pnpm run build:typegen && tsc && vite build"
   },
   "dependencies": {
     "@lit-labs/context": "^0.1.3",
@@ -21,6 +22,8 @@
     "xstate": "^4.34.0"
   },
   "devDependencies": {
+    "@xstate/cli": "^0.3.3",
+    "prettier": "^2.8.0",
     "typescript": "^4.6.4",
     "vite": "^3.2.3"
   },

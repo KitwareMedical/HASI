@@ -5,18 +5,18 @@ import "@material/web/autocomplete/outlined-autocomplete.js";
 import "@material/web/autocomplete/autocomplete-item.js";
 
 import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext } from "./state/hasi.machine.js";
+import { hasiContext, PlotParameter } from "./state/hasi.machine.js";
 import { fields } from "./scan.types.js";
 
 @customElement("biomarker-picker")
 export class BiomarkerPicker extends LitElement {
   public sContext = new ContextConsumer(this, hasiContext, undefined, true);
-  @property() parameter!: string;
+  @property() parameter!: PlotParameter;
 
   private _setPlotParameter = (e: CustomEvent) => {
     this.sContext.value?.service.send({
       type: "PLOT_PARAMETER_CHANGED",
-      slot: this.parameter,
+      parameter: this.parameter,
       value: e.detail.value,
     });
     e.stopPropagation();
