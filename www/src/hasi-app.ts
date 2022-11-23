@@ -1,3 +1,4 @@
+import { ContextProvider } from "@lit-labs/context";
 import { html } from "lit/static-html.js";
 import { LitElement, css } from "lit";
 import { customElement, property } from "lit/decorators.js";
@@ -6,6 +7,8 @@ import { Router } from "@lit-labs/router";
 if (!globalThis.URLPattern) {
   import("urlpattern-polyfill");
 }
+
+import { createService, hasiContext } from "./state/hasi.machine";
 
 import "./top-app-bar.js";
 import "./nav-menu.js";
@@ -22,6 +25,11 @@ const appTitle = "Osteoarthritis Biomarker Analysis";
  */
 @customElement("hasi-app")
 export class HasiApp extends LitElement {
+  // @ts-ignore
+  private provider = new ContextProvider(this, hasiContext, {
+    service: createService(),
+  });
+
   private _routes = new Router(
     this,
     Object.values(PAGES).map(({ path, tag }) => {

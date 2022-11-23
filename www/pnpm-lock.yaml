@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@lit-labs/context': ^0.1.3
   '@lit-labs/router': ^0.1.1
   '@lumino/datagrid': ^0.36.5
   '@lumino/default-theme': ^0.22.5
@@ -11,8 +12,10 @@ specifiers:
   typescript: ^4.6.4
   urlpattern-polyfill: ^6.0.2
   vite: ^3.2.3
+  xstate: ^4.34.0
 
 dependencies:
+  '@lit-labs/context': 0.1.3
   '@lit-labs/router': 0.1.1
   '@lumino/datagrid': 0.36.5
   '@lumino/default-theme': 0.22.5
@@ -21,6 +24,7 @@ dependencies:
   '@material/web': /material-web-hasi/0.1.0-alpha.0
   lit: 2.4.1
   urlpattern-polyfill: 6.0.2
+  xstate: 4.34.0
 
 devDependencies:
   typescript: 4.8.4
@@ -45,6 +49,13 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@lit-labs/context/0.1.3:
+    resolution: {integrity: sha512-OUhXS7imcxuOjN5wvtvB9tt6G9BVSGhbqrnIMafnuDGPsGdw9mpKad7hn/E8NrAjzGeIeZM4LpP8Z3ukqN2lHg==}
+    dependencies:
+      '@lit/reactive-element': 1.4.2
+      lit: 2.4.1
+    dev: false
 
   /@lit-labs/router/0.1.1:
     resolution: {integrity: sha512-B2WYOXmI1vXAZKKkfGWDhe/Ki8W7ZsopFx7uD9ZvdaEFbFjxzqcmBGoK5v2RX1jceG1lmDfdHvCGyXxiy1zqYg==}
@@ -568,3 +579,7 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
+
+  /xstate/4.34.0:
+    resolution: {integrity: sha512-MFnYz7cJrWuXSZ8IPkcCyLB1a2T3C71kzMeShXKmNaEjBR/JQebKZPHTtxHKZpymESaWO31rA3IQ30TC6LW+sw==}
+    dev: false
