@@ -1,6 +1,7 @@
 import { createContext } from "@lit-labs/context";
 import { createMachine, interpret, assign } from "xstate";
-import { Field, fields } from "../scan.types";
+
+import { Field, fields, ScanId } from "../scan.types.js";
 
 export type PlotParameter = "leftBiomarker" | "bottomBiomarker";
 
@@ -10,18 +11,25 @@ export const createService = () => {
       tsTypes: {} as import("./hasi.machine.typegen").Typegen0,
       schema: {
         context: {} as {
+          selectedScans: Set<ScanId>;
           plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
         },
-        events: {} as {
-          type: "PLOT_PARAMETER_CHANGED";
-          parameter: PlotParameter;
-          value: Field;
-        },
+        events: {} as
+          | {
+              type: "PLOT_PARAMETER_CHANGED";
+              parameter: PlotParameter;
+              value: Field;
+            }
+          | {
+              type: "SCAN_CLICKED";
+              id: ScanId;
+            },
       },
 
       id: "hasiApp",
 
       context: {
+        selectedScans: new Set<ScanId>(),
         plotParameters: {
           leftBiomarker: fields[0],
           bottomBiomarker: fields[1],
@@ -33,17 +41,23 @@ export const createService = () => {
         running: {
           on: {
             PLOT_PARAMETER_CHANGED: { actions: "assignParameter" },
+            SCAN_CLICKED: { actions: "toggleScanSelected" },
           },
         },
       },
     },
     {
       actions: {
-        assignParameter: assign((c, e) => {
+        toggleScanSelected: assign(({ selectedScans }, { id }) => {
+          if (!selectedScans.delete(id)) selectedScans.add(id);
+          return { selectedScans };
+        }),
+
+        assignParameter: assign(({ plotParameters }, { parameter, value }) => {
           return {
             plotParameters: {
-              ...c.plotParameters,
-              [e.parameter]: e.value,
+              ...plotParameters,
+              [parameter]: value,
             },
           };
         }),
