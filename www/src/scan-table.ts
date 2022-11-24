@@ -8,6 +8,7 @@ import {
   CellRenderer,
   DataGrid,
   DataModel,
+  GraphicsContext,
   HyperlinkRenderer,
   ResizeHandle,
   SelectionModel,
@@ -19,12 +20,20 @@ import { Platform } from "@lumino/domutils";
 import luminoStyles from "@lumino/default-theme/style/index.css?inline";
 
 import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext, HasiService } from "./state/hasi.machine.js";
+import { hasiContext, HasiService, ScanClicked } from "./state/hasi.machine.js";
 
-import { fields } from "./scan.types.js";
+import { fields, ScanId } from "./scan.types.js";
 import { Drag } from "@lumino/dragdrop";
+import { EventObject } from "xstate";
 
 class LargeDataModel extends DataModel {
+  selectedScans: Set<ScanId>;
+
+  constructor(selectedScans: Set<ScanId>) {
+    super();
+    this.selectedScans = selectedScans;
+  }
+
   rowCount(region: DataModel.RowRegion): number {
     return region === "body" ? 1000000000000 : 1;
   }
@@ -35,7 +44,8 @@ class LargeDataModel extends DataModel {
 
   data(region: DataModel.CellRegion, row: number, column: number): any {
     if (region === "row-header") {
-      return `R: ${row}, ${column}`;
+      const id = `${row}`;
+      return { id, selected: this.selectedScans.has(id) };
     }
     if (region === "column-header") {
       return `${fields[column]}`;
@@ -45,20 +55,43 @@ class LargeDataModel extends DataModel {
     }
     return `(${row}, ${column})`;
   }
+
+  scanUpdated(id: ScanId) {
+    const row = Number(id);
+    this.emitChanged({
+      type: "cells-changed",
+      region: "row-header",
+      row,
+      rowSpan: 1,
+      column: 0,
+      columnSpan: 1,
+    });
+  }
 }
 
 class CheckboxRenderer extends TextRenderer {
-  constructor(options: CheckboxRenderer.IOptions = {}) {
+  readonly checked: CellRenderer.ConfigOption<boolean>;
+  readonly id: CellRenderer.ConfigOption<ScanId>;
+
+  constructor(options: CheckboxRenderer.IOptions) {
     super(options);
+    this.checked = options.checked;
     this.id = options.id;
   }
 
-  readonly id: CellRenderer.ConfigOption<string> | undefined;
+  drawText(gc: GraphicsContext, config: CellRenderer.CellConfig): void {
+    const checked = CellRenderer.resolveOption(this.checked, config);
+    if (checked) {
+      gc.fillStyle = "#00FF0040";
+      gc.fillRect(config.x, config.y, config.width, config.height - 1);
+    }
+  }
 }
 
-export namespace CheckboxRenderer {
+namespace CheckboxRenderer {
   export interface IOptions extends TextRenderer.IOptions {
-    id?: CellRenderer.ConfigOption<string> | undefined;
+    checked: CellRenderer.ConfigOption<boolean>;
+    id: CellRenderer.ConfigOption<ScanId>;
   }
 }
 
@@ -176,33 +209,6 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     return config;
   }
 
-  onMouseHover(grid: DataGrid, event: MouseEvent): void {
-    // Hit test the grid.
-    let hit = grid.hitTest(event.clientX, event.clientY);
-
-    // Get the resize handle for the hit test.
-    let handle = this.resizeHandleForHitTest(hit);
-
-    // Fetch the cursor for the handle.
-    let cursor = this.cursorForHandle(handle);
-
-    // Hyperlink logic.
-    const config = this.createCellConfigObject(grid, hit);
-
-    if (config) {
-      // Retrieve renderer for hovered cell.
-      const renderer = grid.cellRenderers.get(config);
-      if (renderer instanceof HyperlinkRenderer) {
-        cursor = this.cursorForHandle("hyperlink");
-      } else if (renderer instanceof CheckboxRenderer) {
-        cursor = "pointer";
-      }
-    }
-
-    // Update the viewport cursor based on the part.
-    grid.viewport.node.style.cursor = cursor;
-  }
-
   onMouseDown(grid: DataGrid, event: MouseEvent): void {
     // Unpack the event.
     let { clientX, clientY } = event;
@@ -250,7 +256,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
           return;
         }
       } else if (renderer instanceof CheckboxRenderer) {
-        let id = CellRenderer.resolveOption(renderer.id, config!);
+        const id = CellRenderer.resolveOption(renderer.id, config!);
         if (id && this.stateService.value) {
           this.stateService.value?.service.send({ type: "SCAN_CLICKED", id });
         } else {
@@ -489,13 +495,27 @@ class CheckboxMouseHandler extends BasicMouseHandler {
 
 @customElement("scan-table")
 export class ScanTable extends LitElement {
-  private _grid: DataGrid;
-  private _wrapper: StackedPanel;
+  private dataModel!: LargeDataModel;
+  private _grid!: DataGrid;
+  private _wrapper!: StackedPanel;
 
   public stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
   constructor() {
     super();
+  }
+
+  scanClickedHandler = (e: EventObject) => {
+    if (e.type === "SCAN_CLICKED")
+      this.dataModel.scanUpdated((e as ScanClicked).id);
+  };
+
+  resizeHandler = () => {
+    this._wrapper.update();
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
     const blueStripeStyle: DataGrid.Style = {
       ...DataGrid.defaultStyle,
       rowBackgroundColor: (i) =>
@@ -505,14 +525,21 @@ export class ScanTable extends LitElement {
     };
 
     this._grid = new DataGrid({ style: blueStripeStyle });
-    this._grid.dataModel = new LargeDataModel();
+    const dataModel = new LargeDataModel(
+      this.stateService.value!.service.machine.context.selectedScans
+    );
+    this.dataModel = dataModel;
+
+    this._grid.dataModel = dataModel;
+    this.stateService.value!.service.onEvent(this.scanClickedHandler);
     this._grid.keyHandler = new BasicKeyHandler();
     this._grid.mouseHandler = new CheckboxMouseHandler(this.stateService);
     this._grid.selectionModel = new BasicSelectionModel({
-      dataModel: this._grid.dataModel,
+      dataModel,
     });
     const checkboxRenderer = new CheckboxRenderer({
-      id: (config: CellRenderer.CellConfig) => config.value,
+      id: (config: CellRenderer.CellConfig) => config.value.id,
+      checked: (config: CellRenderer.CellConfig) => config.value.selected,
     });
     this._grid.cellRenderers.update({
       "row-header": () => checkboxRenderer,
@@ -520,20 +547,13 @@ export class ScanTable extends LitElement {
 
     this._wrapper = new StackedPanel();
     this._wrapper.addWidget(this._grid);
-  }
-
-  _resizeHandler = () => {
-    this._wrapper.update();
-  };
-
-  connectedCallback() {
-    super.connectedCallback();
     Widget.attach(this._wrapper, this.renderRoot as HTMLElement);
-    window.addEventListener("resize", this._resizeHandler);
+    window.addEventListener("resize", this.resizeHandler);
   }
 
   disconnectedCallback() {
-    window.removeEventListener("resize", this._resizeHandler);
+    window.removeEventListener("resize", this.resizeHandler);
+    this.stateService.value!.service.off(this.scanClickedHandler);
     super.disconnectedCallback();
   }
 

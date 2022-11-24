@@ -4,6 +4,10 @@ import { createMachine, interpret, assign } from "xstate";
 import { Field, fields, ScanId } from "../scan.types.js";
 
 export type PlotParameter = "leftBiomarker" | "bottomBiomarker";
+export type ScanClicked = {
+  type: "SCAN_CLICKED";
+  id: ScanId;
+};
 
 export const createService = () => {
   const machine = createMachine(
@@ -20,10 +24,7 @@ export const createService = () => {
               parameter: PlotParameter;
               value: Field;
             }
-          | {
-              type: "SCAN_CLICKED";
-              id: ScanId;
-            },
+          | ScanClicked,
       },
 
       id: "hasiApp",
