@@ -9,7 +9,6 @@ import {
   DataGrid,
   DataModel,
   GraphicsContext,
-  HyperlinkRenderer,
   ResizeHandle,
   SelectionModel,
   TextRenderer,
@@ -496,10 +495,6 @@ export class ScanTable extends LitElement {
   private _wrapper!: StackedPanel;
 
   public stateService = new ContextConsumer(this, hasiContext, undefined, true);
-
-  constructor() {
-    super();
-  }
 
   scanClickedHandler = (e: EventObject) => {
     if (e.type === "SCAN_CLICKED")

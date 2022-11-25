@@ -3,6 +3,7 @@ import { customElement } from "lit/decorators.js";
 
 import "./plot-params.js";
 import "./scan-table.js";
+import "./scan-views.js";
 
 @customElement("population-root")
 export class PopulationRoot extends LitElement {
@@ -12,7 +13,7 @@ export class PopulationRoot extends LitElement {
       <div class="main-layout">
         <scan-table></scan-table>
         <plot-params></plot-params>
-        <div>Image Viewer</div>
+        <scan-views></scan-views>
       </div>
     `;
   }
