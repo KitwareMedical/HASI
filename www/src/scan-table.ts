@@ -26,6 +26,11 @@ import { fields, ScanId } from "./scan.types.js";
 import { Drag } from "@lumino/dragdrop";
 import { EventObject } from "xstate";
 
+interface RowValue {
+  id: ScanId;
+  selected: boolean;
+}
+
 class LargeDataModel extends DataModel {
   selectedScans: Set<ScanId>;
 
@@ -42,7 +47,11 @@ class LargeDataModel extends DataModel {
     return region === "body" ? fields.length : 1;
   }
 
-  data(region: DataModel.CellRegion, row: number, column: number): any {
+  data(
+    region: DataModel.CellRegion,
+    row: number,
+    column: number
+  ): RowValue | string {
     if (region === "row-header") {
       const id = `${row}`;
       return { id, selected: this.selectedScans.has(id) };
@@ -79,13 +88,17 @@ class CheckboxRenderer extends TextRenderer {
     this.id = options.id;
   }
 
-  drawText(gc: GraphicsContext, config: CellRenderer.CellConfig): void {
+  drawBackground(gc: GraphicsContext, config: CellRenderer.CellConfig): void {
     const checked = CellRenderer.resolveOption(this.checked, config);
     if (checked) {
       gc.fillStyle = "#00FF0040";
       gc.fillRect(config.x, config.y, config.width, config.height - 1);
     }
   }
+
+  format = ({ value }: { value: RowValue }) => {
+    return value.selected ? "\u2713" : "\u2610";
+  };
 }
 
 namespace CheckboxRenderer {
@@ -115,6 +128,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     this.stateService = stateService;
   }
 
+  // helper for onDown
   resizeHandleForHitTest(hit: DataGrid.HitTestResult): ResizeHandle {
     // Fetch the row and column.
     let r = hit.row;
@@ -227,43 +241,6 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     // Fetch the modifier flags.
     let shift = event.shiftKey;
     let accel = Platform.accelKey(event);
-
-    // Hyperlink logic.
-    if (grid) {
-      // Create cell config object.
-      const config = this.createCellConfigObject(grid, hit);
-
-      // Retrieve cell renderer.
-      let renderer = grid.cellRenderers.get(config!);
-
-      // Only process hyperlink renderers.
-      if (renderer instanceof HyperlinkRenderer) {
-        // Use the url param if it exists.
-        let url = CellRenderer.resolveOption(renderer.url, config!);
-        // Otherwise assume cell value is the URL.
-        if (!url) {
-          const format = TextRenderer.formatGeneric();
-          url = format(config!);
-        }
-
-        // Open the hyperlink only if user hit Ctrl+Click.
-        if (accel) {
-          window.open(url);
-          // Reset cursor default after clicking
-          const cursor = this.cursorForHandle("none");
-          grid.viewport.node.style.cursor = cursor;
-          // Not applying selections if navigating away.
-          return;
-        }
-      } else if (renderer instanceof CheckboxRenderer) {
-        const id = CellRenderer.resolveOption(renderer.id, config!);
-        if (id && this.stateService.value) {
-          this.stateService.value?.service.send({ type: "SCAN_CLICKED", id });
-        } else {
-          throw new Error("Did not find ID or stateService not defined");
-        }
-      }
-    }
 
     // If the hit test is the body region, the only option is select.
     if (region === "body") {
@@ -389,6 +366,25 @@ class CheckboxMouseHandler extends BasicMouseHandler {
 
       // Done.
       return;
+    }
+
+    // Check for clicking row header
+    if (grid) {
+      // Create cell config object.
+      const config = this.createCellConfigObject(grid, hit);
+
+      // Retrieve cell renderer.
+      let renderer = grid.cellRenderers.get(config!);
+
+      if (renderer instanceof CheckboxRenderer) {
+        const id = CellRenderer.resolveOption(renderer.id, config!);
+        if (id && this.stateService.value) {
+          this.stateService.value?.service.send({ type: "SCAN_CLICKED", id });
+          return;
+        } else {
+          throw new Error("Did not find ID or stateService not defined");
+        }
+      }
     }
 
     // Otherwise, the only option is select.
@@ -524,7 +520,15 @@ export class ScanTable extends LitElement {
         i % 2 === 0 ? "rgba(100, 100, 100, 0.1)" : "",
     };
 
-    this._grid = new DataGrid({ style: blueStripeStyle });
+    this._grid = new DataGrid({
+      style: blueStripeStyle,
+      defaultSizes: {
+        rowHeight: 32,
+        columnWidth: 90,
+        rowHeaderWidth: 30,
+        columnHeaderHeight: 32,
+      },
+    });
     const dataModel = new LargeDataModel(
       this.stateService.value!.service.machine.context.selectedScans
     );

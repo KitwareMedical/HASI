@@ -26,6 +26,7 @@ export const createService = () => {
             }
           | ScanClicked,
       },
+      predictableActionArguments: true,
 
       id: "hasiApp",
 
