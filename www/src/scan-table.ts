@@ -488,6 +488,10 @@ class CheckboxMouseHandler extends BasicMouseHandler {
   }
 }
 
+const ro = new ResizeObserver((entries) => {
+  entries.forEach((entry) => (entry.target as ScanTable).resizeHandler());
+});
+
 @customElement("scan-table")
 export class ScanTable extends LitElement {
   private dataModel!: LargeDataModel;
@@ -547,12 +551,13 @@ export class ScanTable extends LitElement {
     this._wrapper = new StackedPanel();
     this._wrapper.addWidget(this._grid);
     Widget.attach(this._wrapper, this.renderRoot as HTMLElement);
-    window.addEventListener("resize", this.resizeHandler);
+
+    ro.observe(this);
   }
 
   disconnectedCallback() {
-    window.removeEventListener("resize", this.resizeHandler);
     this.stateService.value!.service.off(this.scanClickedHandler);
+    ro.unobserve(this);
     super.disconnectedCallback();
   }
 
