@@ -8,7 +8,7 @@ if (!globalThis.URLPattern) {
   import("urlpattern-polyfill");
 }
 
-import { createService, hasiContext } from "./state/hasi.machine";
+import { createService, hasiContext, saveState } from "./state/hasi.machine";
 
 import "./top-app-bar.js";
 import "./nav-menu.js";
@@ -30,12 +30,18 @@ export class HasiApp extends LitElement {
     service: createService(),
   });
 
-  private _routes = new Router(
+  private routes = new Router(
     this,
     Object.values(PAGES).map(({ path, tag }) => {
       return {
         path,
-        render: () => html`<${tag}></${tag}>`,
+        render: () => {
+          return html`<${tag}></${tag}>`;
+        },
+        enter: () => {
+          saveState(this.provider.value.service);
+          return true;
+        },
       };
     })
   );
@@ -48,14 +54,14 @@ export class HasiApp extends LitElement {
 
   render() {
     return html`
-      <nav-menu .opened=${this.isMenuOpen}></nav-menu>
+      <nav-menu .opened=${this.isMenuOpen} .routes=${this.routes}></nav-menu>
       <div class="center">
         <top-app-bar
           title=${appTitle}
           .isMenuOpen=${this.isMenuOpen}
           @toggleMenu="${this._toggleMenuHandler}"
         ></top-app-bar>
-        <div class="main-content">${this._routes.outlet()}</div>
+        <div class="main-content">${this.routes.outlet()}</div>
       </div>
     `;
   }

@@ -5,6 +5,7 @@ import "@material/web/list/list.js";
 import "@material/web/list/list-item.js";
 
 import { PAGES } from "./pages";
+import { Routes } from "@lit-labs/router";
 
 /**
  * List of page links
@@ -13,6 +14,7 @@ import { PAGES } from "./pages";
 @customElement("nav-menu")
 export class NavMenu extends LitElement {
   @property() opened = true;
+  @property() routes!: Routes;
 
   render() {
     return html`
@@ -20,7 +22,7 @@ export class NavMenu extends LitElement {
         <md-list role="menu">
           ${Object.values(PAGES).map(
             ({ path, title }) => html`
-              <a href=${path}>
+              <a href=${this.routes.link(path)}>
                 <md-list-item headline=${title}> </md-list-item>
               </a>
             `

@@ -1,7 +1,11 @@
 import { literal } from "lit/static-html.js";
 
 export const PAGES = {
-  population: { title: "Population", path: "/", tag: literal`population-root` },
+  population: {
+    title: "Population",
+    path: "/",
+    tag: literal`population-root`,
+  },
   individual: {
     title: "Individual",
     path: "/individual",

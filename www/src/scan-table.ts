@@ -19,7 +19,7 @@ import { Platform } from "@lumino/domutils";
 import luminoStyles from "@lumino/default-theme/style/index.css?inline";
 
 import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext, HasiService, ScanClicked } from "./state/hasi.machine.js";
+import { hasiContext, HasiContext, ScanClicked } from "./state/hasi.machine.js";
 
 import { fields, ScanId } from "./scan.types.js";
 import { Drag } from "@lumino/dragdrop";
@@ -110,7 +110,7 @@ namespace CheckboxRenderer {
 class CheckboxMouseHandler extends BasicMouseHandler {
   private stateService: ContextConsumer<
     {
-      __context__: HasiService;
+      __context__: HasiContext;
     },
     any
   >;
@@ -118,7 +118,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
   constructor(
     stateService: ContextConsumer<
       {
-        __context__: HasiService;
+        __context__: HasiContext;
       },
       any
     >
