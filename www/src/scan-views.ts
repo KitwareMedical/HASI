@@ -1,21 +1,23 @@
-import { ContextConsumer } from "@lit-labs/context";
 import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { EventObject } from "xstate";
 import { ScanId } from "./scan.types";
-import { hasiContext } from "./state/hasi.machine";
+import { SelectController } from "./SelectController";
 
 @customElement("scan-views")
 export class ScanViews extends LitElement {
-  @property() scanIds: ScanId[] = [];
-
-  stateService = new ContextConsumer(this, hasiContext, undefined, true);
+  scanIdsController: SelectController<Array<ScanId>> = new SelectController(
+    this,
+    (state) => [...state.context.selectedScans],
+    (oldScans, newScans) =>
+      oldScans.length === newScans.length &&
+      oldScans.every((id) => newScans.includes(id))
+  );
 
   render() {
     return html`
       ${repeat(
-        this.scanIds,
+        this.scanIdsController.value ?? [],
         (viewId) => viewId,
         (viewId) => html`<div>${viewId}</div>`
       )}
@@ -31,23 +33,6 @@ export class ScanViews extends LitElement {
       flex: 1;
     }
   `;
-
-  scanClickedHandler = (e: EventObject) => {
-    if (e.type === "SCAN_CLICKED")
-      this.scanIds = Array.from(
-        this.stateService.value!.service.machine.context.selectedScans
-      );
-  };
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.stateService.value!.service.onEvent(this.scanClickedHandler);
-  }
-
-  disconnectedCallback() {
-    this.stateService.value!.service.off(this.scanClickedHandler);
-    super.disconnectedCallback();
-  }
 }
 
 declare global {

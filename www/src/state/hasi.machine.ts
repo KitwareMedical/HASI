@@ -82,6 +82,7 @@ const machine = createMachine(
     },
   }
 );
+export type HasiMachine = typeof machine;
 
 type HasiService = ReturnType<typeof createService>;
 
