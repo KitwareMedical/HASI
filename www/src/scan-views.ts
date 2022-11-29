@@ -1,12 +1,11 @@
 import { LitElement, css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import { ScanId } from "./scan.types";
-import { SelectController } from "./SelectController";
+import { connectState } from "./utils/SelectState";
 
 @customElement("scan-views")
 export class ScanViews extends LitElement {
-  scanIdsController: SelectController<Array<ScanId>> = new SelectController(
+  scanIdsController = connectState(
     this,
     (state) => [...state.context.selectedScans],
     (oldScans, newScans) =>
@@ -17,7 +16,7 @@ export class ScanViews extends LitElement {
   render() {
     return html`
       ${repeat(
-        this.scanIdsController.value ?? [],
+        this.scanIdsController.selected() ?? [],
         (viewId) => viewId,
         (viewId) => html`<div>${viewId}</div>`
       )}
