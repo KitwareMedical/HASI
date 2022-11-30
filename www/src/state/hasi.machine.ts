@@ -1,7 +1,13 @@
 import { createContext } from "@lit-labs/context";
-import { createMachine, interpret, assign, ContextFrom } from "xstate";
+import {
+  createMachine,
+  interpret,
+  assign,
+  ContextFrom,
+  StateFrom,
+} from "xstate";
 
-import { Field, fields, ScanId } from "../scan.types.js";
+import { Field, fields, ScanId, FEATURE_KEYS, Feature } from "../scan.types.js";
 
 export type PlotParameter = "leftBiomarker" | "bottomBiomarker";
 export type ScanClicked = {
@@ -28,11 +34,13 @@ export function encodeToBinary(str: string): string {
 
 const machine = createMachine(
   {
+    id: "hasiApp",
     tsTypes: {} as import("./hasi.machine.typegen").Typegen0,
     schema: {
       context: {} as {
         selectedScans: Set<ScanId>;
         plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
+        features: Array<Feature>;
       },
       events: {} as
         | {
@@ -40,14 +48,25 @@ const machine = createMachine(
             parameter: PlotParameter;
             value: Field;
           }
-        | ScanClicked,
+        | ScanClicked
+        | {
+            type: "FEATURE_SELECT";
+            featureIndex: number;
+            feature: Feature;
+          }
+        | {
+            type: "FEATURE_ADD";
+          }
+        | {
+            type: "FEATURE_REMOVE";
+            featureIndex: number;
+          },
     },
     predictableActionArguments: true,
 
-    id: "hasiApp",
-
     context: {
       selectedScans: new Set<ScanId>(),
+      features: [FEATURE_KEYS[0]], // selected features to view
       plotParameters: {
         leftBiomarker: fields[0],
         bottomBiomarker: fields[1],
@@ -60,6 +79,9 @@ const machine = createMachine(
         on: {
           PLOT_PARAMETER_CHANGED: { actions: "assignParameter" },
           SCAN_CLICKED: { actions: "toggleScanSelected" },
+          FEATURE_SELECT: { actions: "assignFeature" },
+          FEATURE_ADD: { actions: "addFeature" },
+          FEATURE_REMOVE: { actions: "removeFeature" },
         },
       },
     },
@@ -69,6 +91,24 @@ const machine = createMachine(
       toggleScanSelected: assign(({ selectedScans }, { id }) => {
         if (!selectedScans.delete(id)) selectedScans.add(id);
         return { selectedScans };
+      }),
+
+      assignFeature: assign(({ features }, { featureIndex, feature }) => {
+        if (!FEATURE_KEYS.includes(feature)) return { features };
+        return {
+          features: Object.assign([], features, { [featureIndex]: feature }),
+        };
+      }),
+
+      addFeature: assign({
+        features: ({ features }) => [...features, FEATURE_KEYS[0]],
+      }),
+
+      removeFeature: assign({
+        features: ({ features }, { featureIndex }) => [
+          ...features.slice(0, featureIndex),
+          ...features.slice(featureIndex + 1),
+        ],
       }),
 
       assignParameter: assign(({ plotParameters }, { parameter, value }) => {
@@ -99,9 +139,8 @@ function jsonToContext(json: any): ContextFrom<typeof machine> {
 
 const STATE_KEY = "state";
 
-export function saveState(service: HasiService) {
-  const state = service.machine.context;
-  const json = contextToJson(state);
+export function saveState(state: StateFrom<HasiMachine>) {
+  const json = contextToJson(state.context);
 
   window.history.replaceState(
     null,
@@ -110,7 +149,7 @@ export function saveState(service: HasiService) {
   );
 }
 
-function getPastState() {
+function getSavedState() {
   const stateFromURL = new URL(document.location.href).searchParams.get(
     STATE_KEY
   );
@@ -122,11 +161,11 @@ function getPastState() {
 }
 
 export const createService = () => {
-  const context = getPastState();
-
+  const context = getSavedState();
   const m = context ? machine.withContext(context) : machine;
+
   const service = interpret(m).start();
-  service.onTransition(() => saveState(service));
+  service.subscribe((state) => state.changed && saveState(state));
   return service;
 };
 

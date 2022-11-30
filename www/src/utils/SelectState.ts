@@ -71,3 +71,6 @@ export function connectState<
 ) {
   return new SelectState(host, selector, compare);
 }
+
+export const compareArrays = (a: unknown[], b: unknown[]) =>
+  a.length === b.length && a.every((value, idx) => value === b[idx]);

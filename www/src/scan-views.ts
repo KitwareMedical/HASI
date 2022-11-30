@@ -1,34 +1,93 @@
 import { LitElement, css, html } from "lit";
 import { customElement } from "lit/decorators.js";
-import { repeat } from "lit/directives/repeat.js";
-import { connectState } from "./utils/SelectState";
+import { map } from "lit/directives/map.js";
+import "@material/web/fab/fab.js";
+
+import { compareArrays, connectState } from "./utils/SelectState.js";
+import "./feature-scans.js";
+import { ContextConsumer } from "@lit-labs/context";
+import { hasiContext } from "./state/hasi.machine.js";
+import { NAME_TO_KEY } from "./scan.types.js";
+import { classMap } from "lit/directives/class-map.js";
 
 @customElement("scan-views")
 export class ScanViews extends LitElement {
-  scanIdsController = connectState(
+  features = connectState(
     this,
-    (state) => [...state.context.selectedScans],
-    (oldScans, newScans) =>
-      oldScans.length === newScans.length &&
-      oldScans.every((id) => newScans.includes(id))
+    (state) => state.context.features,
+    compareArrays
   );
+
+  stateService = new ContextConsumer(this, hasiContext, undefined, true);
+
+  private addHandler() {
+    this.stateService.value?.service.send("FEATURE_ADD");
+  }
+
+  private valueChangedHandler = (featureIndex: number) => (e: CustomEvent) => {
+    this.stateService.value?.service.send({
+      type: "FEATURE_SELECT",
+      featureIndex,
+      feature: NAME_TO_KEY[e.detail.value],
+    });
+    e.stopPropagation();
+  };
+
+  private featureCloseHandler = (featureIndex: number) => (e: Event) => {
+    this.stateService.value?.service.send({
+      type: "FEATURE_REMOVE",
+      featureIndex,
+    });
+    e.stopPropagation();
+  };
 
   render() {
     return html`
-      ${repeat(
-        this.scanIdsController.selected() ?? [],
-        (viewId) => viewId,
-        (viewId) => html`<div>${viewId}</div>`
-      )}
+      <div class="feature-grid">
+        ${map(
+          this.features.selected() || [],
+          (feature, idx) => html`<feature-scans
+            .feature=${feature}
+            @feature-close=${this.featureCloseHandler(idx)}
+            @autocomplete-value-changed=${this.valueChangedHandler(idx)}
+          ></feature-scans>`
+        )}
+        <div
+          class="add ${classMap({
+            fill: this.features.selected()?.length === 0,
+          })}"
+        >
+          <md-fab @click="${this.addHandler}" icon="add"></md-fab>
+        </div>
+      </div>
     `;
   }
 
   static styles = css`
-    :host {
+    .feature-grid {
+      height: 100%;
+      flex: 1;
+
       display: flex;
+      overflow: auto;
     }
 
-    :host > * {
+    .feature-grid > * {
+      flex: 1;
+      margin-right: 0.2rem;
+      min-width: 30rem;
+    }
+
+    .add {
+      flex: 0 1 auto;
+      min-width: auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fill {
       flex: 1;
     }
   `;

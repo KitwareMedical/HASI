@@ -10,8 +10,9 @@ import { fields } from "./scan.types.js";
 
 @customElement("biomarker-picker")
 export class BiomarkerPicker extends LitElement {
-  public stateService = new ContextConsumer(this, hasiContext, undefined, true);
   @property() parameter!: PlotParameter;
+
+  stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
   private _setPlotParameter = (e: CustomEvent) => {
     this.stateService.value?.service.send({
@@ -31,7 +32,7 @@ export class BiomarkerPicker extends LitElement {
         ${map(
           fields,
           (field) =>
-            html` <md-autocomplete-item
+            html`<md-autocomplete-item
               headline="${field}"
             ></md-autocomplete-item>`
         )}

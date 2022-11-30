@@ -39,7 +39,7 @@ export class HasiApp extends LitElement {
           return html`<${tag}></${tag}>`;
         },
         enter: () => {
-          saveState(this.provider.value.service);
+          saveState(this.provider.value.service.getSnapshot());
           return true;
         },
       };
