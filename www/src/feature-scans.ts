@@ -1,13 +1,13 @@
-import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { repeat } from "lit/directives/repeat.js";
+import { LitElement, css, html } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 
-import { connectState } from "./utils/SelectState.js";
-import "./feature-bar.js";
-import "./scan-view.js";
-import { Feature, FEATURE_KEYS } from "./scan.types.js";
+import { connectState } from './utils/SelectState.js';
+import './feature-bar.js';
+import './scan-view.js';
+import { Feature, FEATURE_KEYS } from './scan.types.js';
 
-@customElement("feature-scans")
+@customElement('feature-scans')
 export class FeatureScans extends LitElement {
   @property() feature: Feature = FEATURE_KEYS[0];
 
@@ -57,6 +57,6 @@ export class FeatureScans extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "feature-scans": FeatureScans;
+    'feature-scans': FeatureScans;
   }
 }

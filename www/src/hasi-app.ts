@@ -1,29 +1,29 @@
-import { ContextProvider } from "@lit-labs/context";
-import { html } from "lit/static-html.js";
-import { LitElement, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { Router } from "@lit-labs/router";
+import { ContextProvider } from '@lit-labs/context';
+import { html } from 'lit/static-html.js';
+import { LitElement, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { Router } from '@lit-labs/router';
 // @ts-ignore: Property 'UrlPattern' does not exist
 if (!globalThis.URLPattern) {
-  import("urlpattern-polyfill");
+  import('urlpattern-polyfill');
 }
 
-import { createService, hasiContext, saveState } from "./state/hasi.machine";
+import { createService, hasiContext, saveState } from './state/hasi.machine';
 
-import "./top-app-bar.js";
-import "./nav-menu.js";
-import "./population-root.js";
-import "./individual-root.js";
-import "./processing-root.js";
-import { PAGES } from "./pages.js";
+import './top-app-bar.js';
+import './nav-menu.js';
+import './population-root.js';
+import './individual-root.js';
+import './processing-root.js';
+import { PAGES } from './pages.js';
 
-const appTitle = "Osteoarthritis Biomarker Analysis";
+const appTitle = 'Osteoarthritis Biomarker Analysis';
 
 /**
  * Hasi entry point
  *
  */
-@customElement("hasi-app")
+@customElement('hasi-app')
 export class HasiApp extends LitElement {
   // @ts-ignore
   private provider = new ContextProvider(this, hasiContext, {
@@ -90,6 +90,6 @@ export class HasiApp extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "hasi-app": HasiApp;
+    'hasi-app': HasiApp;
   }
 }

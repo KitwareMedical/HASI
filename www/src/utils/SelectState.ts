@@ -1,8 +1,8 @@
-import { ContextConsumer } from "@lit-labs/context";
-import { ReactiveController, ReactiveElement } from "lit";
-import { InterpreterFrom, Subscribable } from "xstate";
-import { hasiContext, HasiMachine } from "../state/hasi.machine";
-import { SelectorController } from "./SelectController";
+import { ContextConsumer } from '@lit-labs/context';
+import { ReactiveController, ReactiveElement } from 'lit';
+import { InterpreterFrom, Subscribable } from 'xstate';
+import { hasiContext, HasiMachine } from '../state/hasi.machine';
+import { SelectorController } from './SelectController';
 
 const defaultCompare = (a: any, b: any) => a === b;
 

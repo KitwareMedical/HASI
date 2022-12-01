@@ -1,17 +1,17 @@
-import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import "@material/web/navigationdrawer/navigation-drawer.js";
-import "@material/web/list/list.js";
-import "@material/web/list/list-item.js";
+import { LitElement, html, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import '@material/web/navigationdrawer/navigation-drawer.js';
+import '@material/web/list/list.js';
+import '@material/web/list/list-item.js';
 
-import { PAGES } from "./pages";
-import { Routes } from "@lit-labs/router";
+import { PAGES } from './pages';
+import { Routes } from '@lit-labs/router';
 
 /**
  * List of page links
  *
  */
-@customElement("nav-menu")
+@customElement('nav-menu')
 export class NavMenu extends LitElement {
   @property() opened = true;
   @property() routes!: Routes;
@@ -41,6 +41,6 @@ export class NavMenu extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "nav-menu": NavMenu;
+    'nav-menu': NavMenu;
   }
 }

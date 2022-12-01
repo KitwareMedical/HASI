@@ -29,6 +29,7 @@
     "vite": "^3.2.3"
   },
   "prettier": {
-    "tabWidth": 2
+    "tabWidth": 2,
+    "singleQuote": true
   }
 }

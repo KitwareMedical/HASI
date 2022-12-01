@@ -1,7 +1,7 @@
-import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { LitElement, css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
-@customElement("individual-root")
+@customElement('individual-root')
 export class IndividualRoot extends LitElement {
   render() {
     return html` <h2>Individual</h2> `;
@@ -14,6 +14,6 @@ export class IndividualRoot extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "individual-root": IndividualRoot;
+    'individual-root': IndividualRoot;
   }
 }

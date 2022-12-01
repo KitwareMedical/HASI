@@ -1,14 +1,14 @@
-import { LitElement, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { map } from "lit/directives/map.js";
-import "@material/web/autocomplete/outlined-autocomplete.js";
-import "@material/web/autocomplete/autocomplete-item.js";
+import { LitElement, html } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { map } from 'lit/directives/map.js';
+import '@material/web/autocomplete/outlined-autocomplete.js';
+import '@material/web/autocomplete/autocomplete-item.js';
 
-import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext, PlotParameter } from "./state/hasi.machine.js";
-import { fields } from "./scan.types.js";
+import { ContextConsumer } from '@lit-labs/context';
+import { hasiContext, PlotParameter } from './state/hasi.machine.js';
+import { fields } from './scan.types.js';
 
-@customElement("biomarker-picker")
+@customElement('biomarker-picker')
 export class BiomarkerPicker extends LitElement {
   @property() parameter!: PlotParameter;
 
@@ -16,7 +16,7 @@ export class BiomarkerPicker extends LitElement {
 
   private _setPlotParameter = (e: CustomEvent) => {
     this.stateService.value?.service.send({
-      type: "PLOT_PARAMETER_CHANGED",
+      type: 'PLOT_PARAMETER_CHANGED',
       parameter: this.parameter,
       value: e.detail.value,
     });
@@ -43,6 +43,6 @@ export class BiomarkerPicker extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "biomarker-picker": BiomarkerPicker;
+    'biomarker-picker': BiomarkerPicker;
   }
 }

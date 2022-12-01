@@ -1,16 +1,16 @@
-import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
-import { map } from "lit/directives/map.js";
-import "@material/web/fab/fab.js";
+import { LitElement, css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { map } from 'lit/directives/map.js';
+import '@material/web/fab/fab.js';
 
-import { compareArrays, connectState } from "./utils/SelectState.js";
-import "./feature-scans.js";
-import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext } from "./state/hasi.machine.js";
-import { NAME_TO_KEY } from "./scan.types.js";
-import { classMap } from "lit/directives/class-map.js";
+import { compareArrays, connectState } from './utils/SelectState.js';
+import './feature-scans.js';
+import { ContextConsumer } from '@lit-labs/context';
+import { hasiContext } from './state/hasi.machine.js';
+import { NAME_TO_KEY } from './scan.types.js';
+import { classMap } from 'lit/directives/class-map.js';
 
-@customElement("scan-views")
+@customElement('scan-views')
 export class ScanViews extends LitElement {
   features = connectState(
     this,
@@ -21,12 +21,12 @@ export class ScanViews extends LitElement {
   stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
   private addHandler() {
-    this.stateService.value?.service.send("FEATURE_ADD");
+    this.stateService.value?.service.send('FEATURE_ADD');
   }
 
   private valueChangedHandler = (featureIndex: number) => (e: CustomEvent) => {
     this.stateService.value?.service.send({
-      type: "FEATURE_SELECT",
+      type: 'FEATURE_SELECT',
       featureIndex,
       feature: NAME_TO_KEY[e.detail.value],
     });
@@ -35,7 +35,7 @@ export class ScanViews extends LitElement {
 
   private featureCloseHandler = (featureIndex: number) => (e: Event) => {
     this.stateService.value?.service.send({
-      type: "FEATURE_REMOVE",
+      type: 'FEATURE_REMOVE',
       featureIndex,
     });
     e.stopPropagation();
@@ -95,6 +95,6 @@ export class ScanViews extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "scan-views": ScanViews;
+    'scan-views': ScanViews;
   }
 }

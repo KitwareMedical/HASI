@@ -1,11 +1,11 @@
-import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { LitElement, css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
-import "./plot-params.js";
-import "./scan-table.js";
-import "./scan-views.js";
+import './plot-params.js';
+import './scan-table.js';
+import './scan-views.js';
 
-@customElement("population-root")
+@customElement('population-root')
 export class PopulationRoot extends LitElement {
   render() {
     return html`
@@ -39,6 +39,6 @@ export class PopulationRoot extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "population-root": PopulationRoot;
+    'population-root': PopulationRoot;
   }
 }

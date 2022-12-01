@@ -1,8 +1,8 @@
-import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { Feature, ScanId } from "./scan.types";
+import { LitElement, css, html } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { Feature, ScanId } from './scan.types';
 
-@customElement("scan-view")
+@customElement('scan-view')
 export class ScanView extends LitElement {
   @property() scanId!: ScanId;
   @property() feature!: Feature;
@@ -20,6 +20,6 @@ export class ScanView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "scan-view": ScanView;
+    'scan-view': ScanView;
   }
 }

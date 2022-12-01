@@ -1,5 +1,5 @@
-import { LitElement, css, html, unsafeCSS } from "lit";
-import { customElement } from "lit/decorators.js";
+import { LitElement, css, html, unsafeCSS } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import {
   BasicKeyHandler,
   BasicMouseHandler,
@@ -12,18 +12,18 @@ import {
   ResizeHandle,
   SelectionModel,
   TextRenderer,
-} from "@lumino/datagrid";
-import { StackedPanel, Widget } from "@lumino/widgets";
-import { Platform } from "@lumino/domutils";
+} from '@lumino/datagrid';
+import { StackedPanel, Widget } from '@lumino/widgets';
+import { Platform } from '@lumino/domutils';
 
-import luminoStyles from "@lumino/default-theme/style/index.css?inline";
+import luminoStyles from '@lumino/default-theme/style/index.css?inline';
 
-import { ContextConsumer } from "@lit-labs/context";
-import { hasiContext, HasiContext, ScanClicked } from "./state/hasi.machine.js";
+import { ContextConsumer } from '@lit-labs/context';
+import { hasiContext, HasiContext, ScanClicked } from './state/hasi.machine.js';
 
-import { fields, ScanId } from "./scan.types.js";
-import { Drag } from "@lumino/dragdrop";
-import { EventObject } from "xstate";
+import { fields, ScanId } from './scan.types.js';
+import { Drag } from '@lumino/dragdrop';
+import { EventObject } from 'xstate';
 
 interface RowValue {
   id: ScanId;
@@ -39,11 +39,11 @@ class LargeDataModel extends DataModel {
   }
 
   rowCount(region: DataModel.RowRegion): number {
-    return region === "body" ? 1000000000000 : 1;
+    return region === 'body' ? 1000000000000 : 1;
   }
 
   columnCount(region: DataModel.ColumnRegion): number {
-    return region === "body" ? fields.length : 1;
+    return region === 'body' ? fields.length : 1;
   }
 
   data(
@@ -51,14 +51,14 @@ class LargeDataModel extends DataModel {
     row: number,
     column: number
   ): RowValue | string {
-    if (region === "row-header") {
+    if (region === 'row-header') {
       const id = `${row}`;
       return { id, selected: this.selectedScans.has(id) };
     }
-    if (region === "column-header") {
+    if (region === 'column-header') {
       return `${fields[column]}`;
     }
-    if (region === "corner-header") {
+    if (region === 'corner-header') {
       return ``;
     }
     return `(${row}, ${column})`;
@@ -67,8 +67,8 @@ class LargeDataModel extends DataModel {
   scanUpdated(id: ScanId) {
     const row = Number(id);
     this.emitChanged({
-      type: "cells-changed",
-      region: "row-header",
+      type: 'cells-changed',
+      region: 'row-header',
       row,
       rowSpan: 1,
       column: 0,
@@ -90,13 +90,13 @@ class CheckboxRenderer extends TextRenderer {
   drawBackground(gc: GraphicsContext, config: CellRenderer.CellConfig): void {
     const checked = CellRenderer.resolveOption(this.checked, config);
     if (checked) {
-      gc.fillStyle = "#00FF0040";
+      gc.fillStyle = '#00FF0040';
       gc.fillRect(config.x, config.y, config.width, config.height - 1);
     }
   }
 
   format = ({ value }: { value: RowValue }) => {
-    return value.selected ? "\u2713" : "\u2610";
+    return value.selected ? '\u2713' : '\u2610';
   };
 }
 
@@ -144,53 +144,53 @@ class CheckboxMouseHandler extends BasicMouseHandler {
 
     // Dispatch based on hit test region.
     switch (hit.region) {
-      case "corner-header":
+      case 'corner-header':
         if (c > 0 && lw <= 5) {
-          result = "left";
+          result = 'left';
         } else if (tw <= 6) {
-          result = "right";
+          result = 'right';
         } else if (r > 0 && lh <= 5) {
-          result = "top";
+          result = 'top';
         } else if (th <= 6) {
-          result = "bottom";
+          result = 'bottom';
         } else {
-          result = "none";
+          result = 'none';
         }
         break;
-      case "column-header":
+      case 'column-header':
         if (c > 0 && lw <= 5) {
-          result = "left";
+          result = 'left';
         } else if (tw <= 6) {
-          result = "right";
+          result = 'right';
         } else if (r > 0 && lh <= 5) {
-          result = "top";
+          result = 'top';
         } else if (th <= 6) {
-          result = "bottom";
+          result = 'bottom';
         } else {
-          result = "none";
+          result = 'none';
         }
         break;
-      case "row-header":
+      case 'row-header':
         if (c > 0 && lw <= 5) {
-          result = "left";
+          result = 'left';
         } else if (tw <= 6) {
-          result = "right";
+          result = 'right';
         } else if (r > 0 && lh <= 5) {
-          result = "top";
+          result = 'top';
         } else if (th <= 6) {
-          result = "bottom";
+          result = 'bottom';
         } else {
-          result = "none";
+          result = 'none';
         }
         break;
-      case "body":
-        result = "none";
+      case 'body':
+        result = 'none';
         break;
-      case "void":
-        result = "none";
+      case 'void':
+        result = 'none';
         break;
       default:
-        throw "unreachable";
+        throw 'unreachable';
     }
 
     // Return the result.
@@ -204,7 +204,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     const { region, row, column } = hit;
 
     // Terminate call if region is void.
-    if (region === "void") {
+    if (region === 'void') {
       return undefined;
     }
 
@@ -233,7 +233,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     const { region, row, column } = hit;
 
     // Bail if the hit test is on an uninteresting region.
-    if (region === "void") {
+    if (region === 'void') {
       return;
     }
 
@@ -242,7 +242,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     let accel = Platform.accelKey(event);
 
     // If the hit test is the body region, the only option is select.
-    if (region === "body") {
+    if (region === 'body') {
       // Fetch the selection model.
       let model = grid.selectionModel;
 
@@ -252,11 +252,11 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       }
 
       // Override the document cursor.
-      let override = Drag.overrideCursor("default");
+      let override = Drag.overrideCursor('default');
 
       // Set up the press data.
       this._pressData = {
-        type: "select",
+        type: 'select',
         region,
         row,
         column,
@@ -283,7 +283,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
         c2 = column;
         cursorRow = row;
         cursorColumn = column;
-        clear = "none";
+        clear = 'none';
       } else if (shift) {
         r1 = model.cursorRow;
         r2 = row;
@@ -291,7 +291,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
         c2 = column;
         cursorRow = model.cursorRow;
         cursorColumn = model.cursorColumn;
-        clear = "current";
+        clear = 'current';
       } else {
         r1 = row;
         r2 = row;
@@ -299,7 +299,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
         c2 = column;
         cursorRow = row;
         cursorColumn = column;
-        clear = "all";
+        clear = 'all';
       }
 
       // Make the selection.
@@ -318,16 +318,16 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     let cursor = this.cursorForHandle(handle);
 
     // Handle horizontal resize.
-    if (handle === "left" || handle === "right") {
+    if (handle === 'left' || handle === 'right') {
       // Set up the resize data type.
-      const type = "column-resize";
+      const type = 'column-resize';
 
       // Determine the column region.
       let rgn: DataModel.ColumnRegion =
-        region === "column-header" ? "body" : "row-header";
+        region === 'column-header' ? 'body' : 'row-header';
 
       // Determine the section index.
-      let index = handle === "left" ? column - 1 : column;
+      let index = handle === 'left' ? column - 1 : column;
 
       // Fetch the section size.
       let size = grid.columnSize(rgn, index);
@@ -343,16 +343,16 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     }
 
     // Handle vertical resize
-    if (handle === "top" || handle === "bottom") {
+    if (handle === 'top' || handle === 'bottom') {
       // Set up the resize data type.
-      const type = "row-resize";
+      const type = 'row-resize';
 
       // Determine the row region.
       let rgn: DataModel.RowRegion =
-        region === "row-header" ? "body" : "column-header";
+        region === 'row-header' ? 'body' : 'column-header';
 
       // Determine the section index.
-      let index = handle === "top" ? row - 1 : row;
+      let index = handle === 'top' ? row - 1 : row;
 
       // Fetch the section size.
       let size = grid.rowSize(rgn, index);
@@ -378,10 +378,10 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       if (renderer instanceof CheckboxRenderer) {
         const id = CellRenderer.resolveOption(renderer.id, config!);
         if (id && this.stateService.value) {
-          this.stateService.value?.service.send({ type: "SCAN_CLICKED", id });
+          this.stateService.value?.service.send({ type: 'SCAN_CLICKED', id });
           return;
         } else {
-          throw new Error("Did not find ID or stateService not defined");
+          throw new Error('Did not find ID or stateService not defined');
         }
       }
     }
@@ -397,11 +397,11 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     }
 
     // Override the document cursor.
-    let override = Drag.overrideCursor("default");
+    let override = Drag.overrideCursor('default');
 
     // Set up the press data.
     this._pressData = {
-      type: "select",
+      type: 'select',
       region,
       row,
       column,
@@ -421,23 +421,23 @@ class CheckboxMouseHandler extends BasicMouseHandler {
     let clear: SelectionModel.ClearMode;
 
     // Compute the selection based on the pressed region.
-    if (region === "corner-header") {
+    if (region === 'corner-header') {
       r1 = 0;
       r2 = Infinity;
       c1 = 0;
       c2 = Infinity;
       cursorRow = accel ? 0 : shift ? model.cursorRow : 0;
       cursorColumn = accel ? 0 : shift ? model.cursorColumn : 0;
-      clear = accel ? "none" : shift ? "current" : "all";
-    } else if (region === "row-header") {
+      clear = accel ? 'none' : shift ? 'current' : 'all';
+    } else if (region === 'row-header') {
       r1 = accel ? row : shift ? model.cursorRow : row;
       r2 = row;
 
       const selectionGroup: CellGroup = { r1: r1, c1: 0, r2: r2, c2: 0 };
       const joinedGroup = CellGroup.joinCellGroupsIntersectingAtAxis(
         grid.dataModel!,
-        ["row-header", "body"],
-        "row",
+        ['row-header', 'body'],
+        'row',
         selectionGroup
       );
       // Check if there are any merges
@@ -450,8 +450,8 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       c2 = Infinity;
       cursorRow = accel ? row : shift ? model.cursorRow : row;
       cursorColumn = accel ? 0 : shift ? model.cursorColumn : 0;
-      clear = accel ? "none" : shift ? "current" : "all";
-    } else if (region === "column-header") {
+      clear = accel ? 'none' : shift ? 'current' : 'all';
+    } else if (region === 'column-header') {
       r1 = 0;
       r2 = Infinity;
       c1 = accel ? column : shift ? model.cursorColumn : column;
@@ -460,8 +460,8 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       const selectionGroup: CellGroup = { r1: 0, c1: c1, r2: 0, c2: c2 };
       const joinedGroup = CellGroup.joinCellGroupsIntersectingAtAxis(
         grid.dataModel!,
-        ["column-header", "body"],
-        "column",
+        ['column-header', 'body'],
+        'column',
         selectionGroup
       );
       // Check if there are any merges
@@ -472,7 +472,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
 
       cursorRow = accel ? 0 : shift ? model.cursorRow : 0;
       cursorColumn = accel ? column : shift ? model.cursorColumn : column;
-      clear = accel ? "none" : shift ? "current" : "all";
+      clear = accel ? 'none' : shift ? 'current' : 'all';
     } else {
       r1 = accel ? row : shift ? model.cursorRow : row;
       r2 = row;
@@ -480,7 +480,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       c2 = column;
       cursorRow = accel ? row : shift ? model.cursorRow : row;
       cursorColumn = accel ? column : shift ? model.cursorColumn : column;
-      clear = accel ? "none" : shift ? "current" : "all";
+      clear = accel ? 'none' : shift ? 'current' : 'all';
     }
 
     // Make the selection.
@@ -492,7 +492,7 @@ const ro = new ResizeObserver((entries) => {
   entries.forEach((entry) => (entry.target as ScanTable).resizeHandler());
 });
 
-@customElement("scan-table")
+@customElement('scan-table')
 export class ScanTable extends LitElement {
   private dataModel!: LargeDataModel;
   private _grid!: DataGrid;
@@ -501,7 +501,7 @@ export class ScanTable extends LitElement {
   public stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
   scanClickedHandler = (e: EventObject) => {
-    if (e.type === "SCAN_CLICKED")
+    if (e.type === 'SCAN_CLICKED')
       this.dataModel.scanUpdated((e as ScanClicked).id);
   };
 
@@ -514,9 +514,9 @@ export class ScanTable extends LitElement {
     const blueStripeStyle: DataGrid.Style = {
       ...DataGrid.defaultStyle,
       rowBackgroundColor: (i) =>
-        i % 2 === 0 ? "rgba(138, 172, 200, 0.3)" : "",
+        i % 2 === 0 ? 'rgba(138, 172, 200, 0.3)' : '',
       columnBackgroundColor: (i) =>
-        i % 2 === 0 ? "rgba(100, 100, 100, 0.1)" : "",
+        i % 2 === 0 ? 'rgba(100, 100, 100, 0.1)' : '',
     };
 
     this._grid = new DataGrid({
@@ -545,7 +545,7 @@ export class ScanTable extends LitElement {
       checked: (config: CellRenderer.CellConfig) => config.value.selected,
     });
     this._grid.cellRenderers.update({
-      "row-header": () => checkboxRenderer,
+      'row-header': () => checkboxRenderer,
     });
 
     this._wrapper = new StackedPanel();
@@ -581,6 +581,6 @@ export class ScanTable extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "scan-table": ScanTable;
+    'scan-table': ScanTable;
   }
 }

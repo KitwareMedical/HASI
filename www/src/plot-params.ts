@@ -1,9 +1,9 @@
-import { LitElement, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { LitElement, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
-import "./biomarker-picker.js";
+import './biomarker-picker.js';
 
-@customElement("plot-params")
+@customElement('plot-params')
 export class PivotParams extends LitElement {
   render() {
     return html`
@@ -15,6 +15,6 @@ export class PivotParams extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "plot-params": PivotParams;
+    'plot-params': PivotParams;
   }
 }

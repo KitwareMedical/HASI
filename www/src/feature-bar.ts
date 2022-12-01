@@ -1,18 +1,18 @@
-import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { map } from "lit/directives/map.js";
-import "@material/web/autocomplete/outlined-autocomplete.js";
-import "@material/web/autocomplete/autocomplete-item.js";
-import "@material/web/iconbutton/standard-icon-button";
+import { LitElement, html, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { map } from 'lit/directives/map.js';
+import '@material/web/autocomplete/outlined-autocomplete.js';
+import '@material/web/autocomplete/autocomplete-item.js';
+import '@material/web/iconbutton/standard-icon-button';
 
-import { Feature, FEATURES } from "./scan.types.js";
+import { Feature, FEATURES } from './scan.types.js';
 
-@customElement("feature-bar")
+@customElement('feature-bar')
 export class FeatureBar extends LitElement {
   @property() feature!: Feature;
 
   clickHandler() {
-    const event = new Event("feature-close", { bubbles: true, composed: true });
+    const event = new Event('feature-close', { bubbles: true, composed: true });
     this.dispatchEvent(event);
   }
 
@@ -48,6 +48,6 @@ export class FeatureBar extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "feature-bar": FeatureBar;
+    'feature-bar': FeatureBar;
   }
 }

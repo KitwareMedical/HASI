@@ -1,17 +1,17 @@
-import { createContext } from "@lit-labs/context";
+import { createContext } from '@lit-labs/context';
 import {
   createMachine,
   interpret,
   assign,
   ContextFrom,
   StateFrom,
-} from "xstate";
+} from 'xstate';
 
-import { Field, fields, ScanId, FEATURE_KEYS, Feature } from "../scan.types.js";
+import { Field, fields, ScanId, FEATURE_KEYS, Feature } from '../scan.types.js';
 
-export type PlotParameter = "leftBiomarker" | "bottomBiomarker";
+export type PlotParameter = 'leftBiomarker' | 'bottomBiomarker';
 export type ScanClicked = {
-  type: "SCAN_CLICKED";
+  type: 'SCAN_CLICKED';
   id: ScanId;
 };
 
@@ -19,9 +19,9 @@ export function decodeFromBinary(str: string): string {
   return decodeURIComponent(
     Array.prototype.map
       .call(atob(str), function (c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       })
-      .join("")
+      .join('')
   );
 }
 export function encodeToBinary(str: string): string {
@@ -34,8 +34,8 @@ export function encodeToBinary(str: string): string {
 
 const machine = createMachine(
   {
-    id: "hasiApp",
-    tsTypes: {} as import("./hasi.machine.typegen").Typegen0,
+    id: 'hasiApp',
+    tsTypes: {} as import('./hasi.machine.typegen').Typegen0,
     schema: {
       context: {} as {
         selectedScans: Set<ScanId>;
@@ -44,21 +44,21 @@ const machine = createMachine(
       },
       events: {} as
         | {
-            type: "PLOT_PARAMETER_CHANGED";
+            type: 'PLOT_PARAMETER_CHANGED';
             parameter: PlotParameter;
             value: Field;
           }
         | ScanClicked
         | {
-            type: "FEATURE_SELECT";
+            type: 'FEATURE_SELECT';
             featureIndex: number;
             feature: Feature;
           }
         | {
-            type: "FEATURE_ADD";
+            type: 'FEATURE_ADD';
           }
         | {
-            type: "FEATURE_REMOVE";
+            type: 'FEATURE_REMOVE';
             featureIndex: number;
           },
     },
@@ -73,15 +73,15 @@ const machine = createMachine(
       },
     },
 
-    initial: "running",
+    initial: 'running',
     states: {
       running: {
         on: {
-          PLOT_PARAMETER_CHANGED: { actions: "assignParameter" },
-          SCAN_CLICKED: { actions: "toggleScanSelected" },
-          FEATURE_SELECT: { actions: "assignFeature" },
-          FEATURE_ADD: { actions: "addFeature" },
-          FEATURE_REMOVE: { actions: "removeFeature" },
+          PLOT_PARAMETER_CHANGED: { actions: 'assignParameter' },
+          SCAN_CLICKED: { actions: 'toggleScanSelected' },
+          FEATURE_SELECT: { actions: 'assignFeature' },
+          FEATURE_ADD: { actions: 'addFeature' },
+          FEATURE_REMOVE: { actions: 'removeFeature' },
         },
       },
     },
@@ -137,14 +137,14 @@ function jsonToContext(json: any): ContextFrom<typeof machine> {
   return json;
 }
 
-const STATE_KEY = "state";
+const STATE_KEY = 'state';
 
 export function saveState(state: StateFrom<HasiMachine>) {
   const json = contextToJson(state.context);
 
   window.history.replaceState(
     null,
-    "",
+    '',
     `?${STATE_KEY}=${encodeToBinary(json)}`
   );
 }
@@ -173,4 +173,4 @@ export interface HasiContext {
   service: HasiService;
 }
 
-export const hasiContext = createContext<HasiContext>("hasiService");
+export const hasiContext = createContext<HasiContext>('hasiService');

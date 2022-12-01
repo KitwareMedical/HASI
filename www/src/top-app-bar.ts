@@ -1,11 +1,11 @@
-import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import "@material/web/button/outlined-button";
-import "@material/web/iconbutton/standard-icon-button-toggle";
+import { LitElement, css, html } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import '@material/web/button/outlined-button';
+import '@material/web/iconbutton/standard-icon-button-toggle';
 
-@customElement("top-app-bar")
+@customElement('top-app-bar')
 export class TopAppBar extends LitElement {
-  @property() title: string = "title";
+  @property() title: string = 'title';
   @property() isMenuOpen: boolean = true;
   render() {
     return html`
@@ -27,7 +27,7 @@ export class TopAppBar extends LitElement {
 
   private _clickHandler() {
     this.dispatchEvent(
-      new CustomEvent("toggleMenu", {
+      new CustomEvent('toggleMenu', {
         bubbles: true,
         composed: true,
       })
@@ -37,6 +37,6 @@ export class TopAppBar extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "top-app-bar": TopAppBar;
+    'top-app-bar': TopAppBar;
   }
 }
