@@ -2,7 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 
-import { connectState } from './utils/SelectState.js';
+import { connectState } from './utils/select-state.js';
 import './feature-bar.js';
 import './scan-view.js';
 import { Feature, FEATURE_KEYS } from './scan.types.js';
@@ -13,7 +13,7 @@ export class FeatureScans extends LitElement {
 
   scanIds = connectState(
     this,
-    (state) => [...state.context.selectedScans],
+    (state) => [...state.context.scanSelection.selected.map(({ id }) => id)],
     (oldScans, newScans) =>
       oldScans.length === newScans.length &&
       oldScans.every((id) => newScans.includes(id))
@@ -24,7 +24,7 @@ export class FeatureScans extends LitElement {
       <feature-bar .feature=${this.feature}></feature-bar>
       <div class="scans">
         ${repeat(
-          this.scanIds.selected() ?? [],
+          this.scanIds.value ?? [],
           (scanId) => scanId,
           (scanId) =>
             html`<scan-view

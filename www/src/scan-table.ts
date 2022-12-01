@@ -1,5 +1,6 @@
-import { LitElement, css, html, unsafeCSS } from 'lit';
+import { LitElement, css, unsafeCSS } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { ContextConsumer } from '@lit-labs/context';
 import {
   BasicKeyHandler,
   BasicMouseHandler,
@@ -15,27 +16,34 @@ import {
 } from '@lumino/datagrid';
 import { StackedPanel, Widget } from '@lumino/widgets';
 import { Platform } from '@lumino/domutils';
-
 import luminoStyles from '@lumino/default-theme/style/index.css?inline';
-
-import { ContextConsumer } from '@lit-labs/context';
-import { hasiContext, HasiContext, ScanClicked } from './state/hasi.machine.js';
-
-import { fields, ScanId } from './scan.types.js';
 import { Drag } from '@lumino/dragdrop';
-import { EventObject } from 'xstate';
 
-interface RowValue {
+import { hasiContext, HasiContext } from './state/hasi.machine.js';
+import { fields, ScanId } from './scan.types.js';
+import { Color, get, has, ScanSelection } from './state/scan-selection.js';
+import { connectState } from './utils/select-state.js';
+
+interface RowValueBase {
   id: ScanId;
-  selected: boolean;
 }
 
-class LargeDataModel extends DataModel {
-  selectedScans: Set<ScanId>;
+interface UnSelectedRowValue extends RowValueBase {
+  selected: false;
+}
 
-  constructor(selectedScans: Set<ScanId>) {
+interface SelectedRowValue extends RowValueBase {
+  selected: true;
+  color: Color;
+}
+
+type RowValue = UnSelectedRowValue | SelectedRowValue;
+
+class LargeDataModel extends DataModel {
+  scanSelection: ScanSelection;
+  constructor(scanSelection: ScanSelection) {
     super();
-    this.selectedScans = selectedScans;
+    this.scanSelection = scanSelection;
   }
 
   rowCount(region: DataModel.RowRegion): number {
@@ -53,7 +61,11 @@ class LargeDataModel extends DataModel {
   ): RowValue | string {
     if (region === 'row-header') {
       const id = `${row}`;
-      return { id, selected: this.selectedScans.has(id) };
+      const color = get(id, this.scanSelection)?.color;
+      return {
+        id,
+        ...(color ? { selected: true, color } : { selected: false }),
+      };
     }
     if (region === 'column-header') {
       return `${fields[column]}`;
@@ -64,7 +76,18 @@ class LargeDataModel extends DataModel {
     return `(${row}, ${column})`;
   }
 
-  scanUpdated(id: ScanId) {
+  setSelectedScanIds(newSelection: ScanSelection) {
+    const removedScans = this.scanSelection.selected
+      .map(({ id }) => id)
+      .filter((id) => !has(id, newSelection));
+    const newScans = newSelection.selected
+      .map(({ id }) => id)
+      .filter((id) => !has(id, this.scanSelection));
+    this.scanSelection = newSelection;
+    [...removedScans, ...newScans].forEach((id) => this.scanUpdated(id));
+  }
+
+  private scanUpdated(id: ScanId) {
     const row = Number(id);
     this.emitChanged({
       type: 'cells-changed',
@@ -78,19 +101,14 @@ class LargeDataModel extends DataModel {
 }
 
 class CheckboxRenderer extends TextRenderer {
-  readonly checked: CellRenderer.ConfigOption<boolean>;
-  readonly id: CellRenderer.ConfigOption<ScanId>;
-
   constructor(options: CheckboxRenderer.IOptions) {
     super(options);
-    this.checked = options.checked;
-    this.id = options.id;
   }
 
   drawBackground(gc: GraphicsContext, config: CellRenderer.CellConfig): void {
-    const checked = CellRenderer.resolveOption(this.checked, config);
-    if (checked) {
-      gc.fillStyle = '#00FF0040';
+    const { value }: { value: RowValue } = config;
+    if (value.selected) {
+      gc.fillStyle = value.color;
       gc.fillRect(config.x, config.y, config.width, config.height - 1);
     }
   }
@@ -101,10 +119,7 @@ class CheckboxRenderer extends TextRenderer {
 }
 
 namespace CheckboxRenderer {
-  export interface IOptions extends TextRenderer.IOptions {
-    checked: CellRenderer.ConfigOption<boolean>;
-    id: CellRenderer.ConfigOption<ScanId>;
-  }
+  export interface IOptions extends TextRenderer.IOptions {}
 }
 
 class CheckboxMouseHandler extends BasicMouseHandler {
@@ -376,7 +391,7 @@ class CheckboxMouseHandler extends BasicMouseHandler {
       let renderer = grid.cellRenderers.get(config!);
 
       if (renderer instanceof CheckboxRenderer) {
-        const id = CellRenderer.resolveOption(renderer.id, config!);
+        const { id } = config!.value as RowValue;
         if (id && this.stateService.value) {
           this.stateService.value?.service.send({ type: 'SCAN_CLICKED', id });
           return;
@@ -500,10 +515,13 @@ export class ScanTable extends LitElement {
 
   public stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
-  scanClickedHandler = (e: EventObject) => {
-    if (e.type === 'SCAN_CLICKED')
-      this.dataModel.scanUpdated((e as ScanClicked).id);
-  };
+  scanSelection = connectState(
+    this,
+    (state) => state.context.scanSelection,
+    (oldSelection, newSelection) =>
+      oldSelection.selected.length === newSelection.selected.length &&
+      oldSelection.selected.every(({ id }) => has(id, newSelection))
+  );
 
   resizeHandler = () => {
     this._wrapper.update();
@@ -529,21 +547,17 @@ export class ScanTable extends LitElement {
       },
     });
     const dataModel = new LargeDataModel(
-      this.stateService.value!.service.machine.context.selectedScans
+      this.stateService.value!.service.getSnapshot().context.scanSelection
     );
     this.dataModel = dataModel;
 
     this._grid.dataModel = dataModel;
-    this.stateService.value!.service.onEvent(this.scanClickedHandler);
     this._grid.keyHandler = new BasicKeyHandler();
     this._grid.mouseHandler = new CheckboxMouseHandler(this.stateService);
     this._grid.selectionModel = new BasicSelectionModel({
       dataModel,
     });
-    const checkboxRenderer = new CheckboxRenderer({
-      id: (config: CellRenderer.CellConfig) => config.value.id,
-      checked: (config: CellRenderer.CellConfig) => config.value.selected,
-    });
+    const checkboxRenderer = new CheckboxRenderer({});
     this._grid.cellRenderers.update({
       'row-header': () => checkboxRenderer,
     });
@@ -556,13 +570,13 @@ export class ScanTable extends LitElement {
   }
 
   disconnectedCallback() {
-    this.stateService.value!.service.off(this.scanClickedHandler);
     ro.unobserve(this);
     super.disconnectedCallback();
   }
 
   render() {
-    return html``;
+    const selection = this.scanSelection.value;
+    if (selection) this.dataModel.setSelectedScanIds(selection);
   }
 
   static styles = [

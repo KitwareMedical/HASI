@@ -2,7 +2,7 @@ import { ContextConsumer } from '@lit-labs/context';
 import { ReactiveController, ReactiveElement } from 'lit';
 import { InterpreterFrom, Subscribable } from 'xstate';
 import { hasiContext, HasiMachine } from '../state/hasi.machine';
-import { SelectorController } from './SelectController';
+import { SelectorController } from './select-controller';
 
 const defaultCompare = (a: any, b: any) => a === b;
 
@@ -54,8 +54,8 @@ export class SelectState<
     this.selectorController?.hostDisconnected();
   }
 
-  selected() {
-    return this.selectorController?.selected();
+  get value() {
+    return this.selectorController?.value;
   }
 }
 

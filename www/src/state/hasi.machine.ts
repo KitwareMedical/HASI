@@ -8,6 +8,7 @@ import {
 } from 'xstate';
 
 import { Field, fields, ScanId, FEATURE_KEYS, Feature } from '../scan.types.js';
+import * as ScanSelection from './scan-selection.js';
 
 export type PlotParameter = 'leftBiomarker' | 'bottomBiomarker';
 export type ScanClicked = {
@@ -15,7 +16,7 @@ export type ScanClicked = {
   id: ScanId;
 };
 
-export function decodeFromBinary(str: string): string {
+function decodeFromBinary(str: string): string {
   return decodeURIComponent(
     Array.prototype.map
       .call(atob(str), function (c) {
@@ -24,7 +25,8 @@ export function decodeFromBinary(str: string): string {
       .join('')
   );
 }
-export function encodeToBinary(str: string): string {
+
+function encodeToBinary(str: string): string {
   return btoa(
     encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (_, p1) {
       return String.fromCharCode(parseInt(p1, 16));
@@ -37,11 +39,6 @@ const machine = createMachine(
     id: 'hasiApp',
     tsTypes: {} as import('./hasi.machine.typegen').Typegen0,
     schema: {
-      context: {} as {
-        selectedScans: Set<ScanId>;
-        plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
-        features: Array<Feature>;
-      },
       events: {} as
         | {
             type: 'PLOT_PARAMETER_CHANGED';
@@ -61,11 +58,16 @@ const machine = createMachine(
             type: 'FEATURE_REMOVE';
             featureIndex: number;
           },
+      context: {} as {
+        scanSelection: ScanSelection.ScanSelection;
+        plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
+        features: Array<Feature>;
+      },
     },
     predictableActionArguments: true,
 
     context: {
-      selectedScans: new Set<ScanId>(),
+      scanSelection: ScanSelection.createSelectedScans(),
       features: [FEATURE_KEYS[0]], // selected features to view
       plotParameters: {
         leftBiomarker: fields[0],
@@ -88,10 +90,9 @@ const machine = createMachine(
   },
   {
     actions: {
-      toggleScanSelected: assign(({ selectedScans }, { id }) => {
-        if (!selectedScans.delete(id)) selectedScans.add(id);
-        return { selectedScans };
-      }),
+      toggleScanSelected: assign(({ scanSelection }, { id }) => ({
+        scanSelection: ScanSelection.toggle(id, scanSelection),
+      })),
 
       assignFeature: assign(({ features }, { featureIndex, feature }) => {
         if (!FEATURE_KEYS.includes(feature)) return { features };
@@ -127,20 +128,17 @@ export type HasiMachine = typeof machine;
 type HasiService = ReturnType<typeof createService>;
 
 function contextToJson(c: ContextFrom<typeof machine>) {
-  return JSON.stringify(c, (_, value) => {
-    return value instanceof Set ? Array.from(value as Set<ScanId>) : value;
-  });
+  return c;
 }
 
 function jsonToContext(json: any): ContextFrom<typeof machine> {
-  json.selectedScans = new Set(json.selectedScans);
   return json;
 }
 
 const STATE_KEY = 'state';
 
 export function saveState(state: StateFrom<HasiMachine>) {
-  const json = contextToJson(state.context);
+  const json = JSON.stringify(contextToJson(state.context));
 
   window.history.replaceState(
     null,

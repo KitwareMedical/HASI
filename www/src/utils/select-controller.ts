@@ -27,7 +27,7 @@ export class SelectorController<
 {
   private host: ReactiveControllerHost;
   private subscription: Subscription;
-  private _selected: T;
+  private selected: T;
 
   constructor(
     host: ReactiveControllerHost,
@@ -38,19 +38,19 @@ export class SelectorController<
     this.host = host;
     this.host.addController(this);
 
-    this._selected = selector(getSnapshot(actorRef));
+    this.selected = selector(getSnapshot(actorRef));
 
     this.subscription = actorRef.subscribe((emitted) => {
       const nextSelected = selector(emitted);
-      if (!compare(this._selected, nextSelected)) {
-        this._selected = nextSelected;
+      if (!compare(this.selected, nextSelected)) {
+        this.selected = nextSelected;
         this.host.requestUpdate();
       }
     });
   }
 
-  selected() {
-    return this._selected;
+  get value() {
+    return this.selected;
   }
 
   hostDisconnected() {

@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import '@material/web/fab/fab.js';
 
-import { compareArrays, connectState } from './utils/SelectState.js';
+import { compareArrays, connectState } from './utils/select-state.js';
 import './feature-scans.js';
 import { ContextConsumer } from '@lit-labs/context';
 import { hasiContext } from './state/hasi.machine.js';
@@ -45,7 +45,7 @@ export class ScanViews extends LitElement {
     return html`
       <div class="feature-grid">
         ${map(
-          this.features.selected() || [],
+          this.features.value || [],
           (feature, idx) => html`<feature-scans
             .feature=${feature}
             @feature-close=${this.featureCloseHandler(idx)}
@@ -54,10 +54,11 @@ export class ScanViews extends LitElement {
         )}
         <div
           class="add ${classMap({
-            fill: this.features.selected()?.length === 0,
+            fill: this.features.value?.length === 0,
           })}"
         >
-          <md-fab @click="${this.addHandler}" icon="add"></md-fab>
+          <md-standard-icon-button @click="${this.addHandler}" icon="add">
+          </md-standard-icon-button>
         </div>
       </div>
     `;
