@@ -91,6 +91,14 @@ class LargeDataModel extends DataModel {
     const row = Number(id);
     this.emitChanged({
       type: 'cells-changed',
+      region: 'body',
+      row,
+      rowSpan: 1,
+      column: 0,
+      columnSpan: this.columnCount('body'),
+    });
+    this.emitChanged({
+      type: 'cells-changed',
       region: 'row-header',
       row,
       rowSpan: 1,
@@ -394,7 +402,6 @@ class CheckboxMouseHandler extends BasicMouseHandler {
         const { id } = config!.value as RowValue;
         if (id && this.stateService.value) {
           this.stateService.value?.service.send({ type: 'SCAN_CLICKED', id });
-          return;
         } else {
           throw new Error('Did not find ID or stateService not defined');
         }
@@ -558,8 +565,19 @@ export class ScanTable extends LitElement {
       dataModel,
     });
     const checkboxRenderer = new CheckboxRenderer({});
+    const scanSelectionRenderer = new TextRenderer({
+      backgroundColor: ({ row }) => {
+        const id = row.toString();
+        return (
+          (this.scanSelection.value &&
+            get(id, this.scanSelection.value)?.color) ??
+          'white'
+        );
+      },
+    });
     this._grid.cellRenderers.update({
       'row-header': () => checkboxRenderer,
+      body: () => scanSelectionRenderer,
     });
 
     this._wrapper = new StackedPanel();
