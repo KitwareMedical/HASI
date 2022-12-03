@@ -21,7 +21,13 @@ import { Drag } from '@lumino/dragdrop';
 
 import { hasiContext, HasiContext } from './state/hasi.machine.js';
 import { fields, ScanId } from './scan.types.js';
-import { Color, get, has, ScanSelection } from './state/scan-selection.js';
+import {
+  Color,
+  compare,
+  get,
+  has,
+  ScanSelections,
+} from './state/scan-selections.js';
 import { connectState } from './utils/select-state.js';
 
 interface RowValueBase {
@@ -40,10 +46,10 @@ interface SelectedRowValue extends RowValueBase {
 type RowValue = UnSelectedRowValue | SelectedRowValue;
 
 class LargeDataModel extends DataModel {
-  scanSelection: ScanSelection;
-  constructor(scanSelection: ScanSelection) {
+  scanSelections: ScanSelections;
+  constructor(scanSelection: ScanSelections) {
     super();
-    this.scanSelection = scanSelection;
+    this.scanSelections = scanSelection;
   }
 
   rowCount(region: DataModel.RowRegion): number {
@@ -61,7 +67,7 @@ class LargeDataModel extends DataModel {
   ): RowValue | string {
     if (region === 'row-header') {
       const id = `${row}`;
-      const color = get(id, this.scanSelection)?.color;
+      const color = get(id, this.scanSelections)?.color;
       return {
         id,
         ...(color ? { selected: true, color } : { selected: false }),
@@ -76,14 +82,14 @@ class LargeDataModel extends DataModel {
     return `(${row}, ${column})`;
   }
 
-  setSelectedScanIds(newSelection: ScanSelection) {
-    const removedScans = this.scanSelection.selected
+  setSelectedScanIds(newSelection: ScanSelections) {
+    const removedScans = this.scanSelections
       .map(({ id }) => id)
       .filter((id) => !has(id, newSelection));
-    const newScans = newSelection.selected
+    const newScans = newSelection
       .map(({ id }) => id)
-      .filter((id) => !has(id, this.scanSelection));
-    this.scanSelection = newSelection;
+      .filter((id) => !has(id, this.scanSelections));
+    this.scanSelections = newSelection;
     [...removedScans, ...newScans].forEach((id) => this.scanUpdated(id));
   }
 
@@ -122,7 +128,7 @@ class CheckboxRenderer extends TextRenderer {
   }
 
   format = ({ value }: { value: RowValue }) => {
-    return value.selected ? '\u2713' : '\u2610';
+    return value.selected ? '\u2713' : '\u2610'; // check or square
   };
 }
 
@@ -524,10 +530,8 @@ export class ScanTable extends LitElement {
 
   scanSelection = connectState(
     this,
-    (state) => state.context.scanSelection,
-    (oldSelection, newSelection) =>
-      oldSelection.selected.length === newSelection.selected.length &&
-      oldSelection.selected.every(({ id }) => has(id, newSelection))
+    (state) => state.context.scanSelectionsPool.selections,
+    compare
   );
 
   resizeHandler = () => {
@@ -553,9 +557,7 @@ export class ScanTable extends LitElement {
         columnHeaderHeight: 32,
       },
     });
-    const dataModel = new LargeDataModel(
-      this.stateService.value!.service.getSnapshot().context.scanSelection
-    );
+    const dataModel = new LargeDataModel(this.scanSelection.value!);
     this.dataModel = dataModel;
 
     this._grid.dataModel = dataModel;

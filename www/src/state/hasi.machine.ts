@@ -8,7 +8,7 @@ import {
 } from 'xstate';
 
 import { Field, fields, ScanId, FEATURE_KEYS, Feature } from '../scan.types.js';
-import * as ScanSelection from './scan-selection.js';
+import * as ScanSelections from './scan-selections.js';
 
 export type PlotParameter = 'leftBiomarker' | 'bottomBiomarker';
 export type ScanClicked = {
@@ -59,7 +59,7 @@ const machine = createMachine(
             featureIndex: number;
           },
       context: {} as {
-        scanSelection: ScanSelection.ScanSelection;
+        scanSelectionsPool: ScanSelections.ScanSelectionsPool;
         plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
         features: Array<Feature>;
       },
@@ -67,7 +67,7 @@ const machine = createMachine(
     predictableActionArguments: true,
 
     context: {
-      scanSelection: ScanSelection.createSelectedScans(),
+      scanSelectionsPool: ScanSelections.createSelectionPool(),
       features: [FEATURE_KEYS[0]], // selected features to view
       plotParameters: {
         leftBiomarker: fields[0],
@@ -90,9 +90,11 @@ const machine = createMachine(
   },
   {
     actions: {
-      toggleScanSelected: assign(({ scanSelection }, { id }) => ({
-        scanSelection: ScanSelection.toggle(id, scanSelection),
-      })),
+      toggleScanSelected: assign(
+        ({ scanSelectionsPool: scanSelection }, { id }) => ({
+          scanSelectionsPool: ScanSelections.toggle(id, scanSelection),
+        })
+      ),
 
       assignFeature: assign(({ features }, { featureIndex, feature }) => {
         if (!FEATURE_KEYS.includes(feature)) return { features };

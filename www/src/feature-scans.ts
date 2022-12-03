@@ -6,17 +6,16 @@ import { connectState } from './utils/select-state.js';
 import './feature-bar.js';
 import './scan-view.js';
 import { Feature, FEATURE_KEYS } from './scan.types.js';
+import { compare } from './state/scan-selections.js';
 
 @customElement('feature-scans')
 export class FeatureScans extends LitElement {
   @property() feature: Feature = FEATURE_KEYS[0];
 
-  scanIds = connectState(
+  scans = connectState(
     this,
-    (state) => [...state.context.scanSelection.selected.map(({ id }) => id)],
-    (oldScans, newScans) =>
-      oldScans.length === newScans.length &&
-      oldScans.every((id) => newScans.includes(id))
+    (state) => state.context.scanSelectionsPool.selections,
+    compare
   );
 
   render() {
@@ -24,13 +23,10 @@ export class FeatureScans extends LitElement {
       <feature-bar .feature=${this.feature}></feature-bar>
       <div class="scans">
         ${repeat(
-          this.scanIds.value ?? [],
-          (scanId) => scanId,
-          (scanId) =>
-            html`<scan-view
-              .scanId=${scanId}
-              .feature=${this.feature}
-            ></scan-view>`
+          this.scans.value ?? [],
+          ({ id }) => id,
+          (scan) =>
+            html`<scan-view .scan=${scan} .feature=${this.feature}></scan-view>`
         )}
       </div>
     `;
