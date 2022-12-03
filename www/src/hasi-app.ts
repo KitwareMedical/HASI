@@ -46,7 +46,7 @@ export class HasiApp extends LitElement {
     })
   );
 
-  @property() isMenuOpen = true;
+  @property() isMenuOpen = false;
 
   private _toggleMenuHandler() {
     this.isMenuOpen = !this.isMenuOpen;

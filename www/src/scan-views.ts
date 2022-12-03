@@ -1,6 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { map } from 'lit/directives/map.js';
+import { repeat } from 'lit/directives/repeat.js';
 import '@material/web/fab/fab.js';
 
 import { compareArrays, connectState } from './utils/select-state.js';
@@ -44,8 +44,9 @@ export class ScanViews extends LitElement {
   render() {
     return html`
       <div class="feature-grid">
-        ${map(
+        ${repeat(
           this.features.value || [],
+          (feature) => feature,
           (feature, idx) => html`<feature-scans
             .feature=${feature}
             @feature-close=${this.featureCloseHandler(idx)}
@@ -75,8 +76,6 @@ export class ScanViews extends LitElement {
 
     .feature-grid > * {
       flex: 1;
-      margin-right: 0.2rem;
-      min-width: 30rem;
     }
 
     .add {

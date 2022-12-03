@@ -46,6 +46,7 @@ export class FeatureScans extends LitElement {
     }
 
     .scans > * {
+      margin: 0.2rem;
       flex: 1;
     }
   `;

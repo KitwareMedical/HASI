@@ -57,6 +57,10 @@ const machine = createMachine(
         | {
             type: 'FEATURE_REMOVE';
             featureIndex: number;
+          }
+        | {
+            type: 'FOCUS_SCAN';
+            id: ScanId;
           },
       context: {} as {
         scanSelectionsPool: ScanSelections.ScanSelectionsPool;

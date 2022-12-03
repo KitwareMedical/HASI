@@ -3,7 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import '@material/web/autocomplete/outlined-autocomplete.js';
 import '@material/web/autocomplete/autocomplete-item.js';
-import '@material/web/iconbutton/standard-icon-button';
+import '@material/web/iconbutton/standard-icon-button.js';
 
 import { Feature, FEATURES } from './scan.types.js';
 
