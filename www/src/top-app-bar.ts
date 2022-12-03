@@ -22,6 +22,7 @@ export class TopAppBar extends LitElement {
   static styles = css`
     :host {
       display: flex;
+      align-items: center;
     }
   `;
 

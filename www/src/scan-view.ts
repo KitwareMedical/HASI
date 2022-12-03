@@ -26,33 +26,34 @@ export class ScanView extends LitElement {
     const selectionColor = {
       '--md-elevated-button-container-color': this.scan.color,
     };
+    const image = `http://placekitten.com/400/300?image=${Math.floor(
+      Math.random() * 16
+    )}`;
+    const background = {
+      background: `url(${image}) center center`,
+    };
     return html`
-      <img
-        src="http://placekitten.com/400/200?image=${Math.floor(
-          Math.random() * 16
-        )}"
-        style="object-fit: cover; flex: 1"
-      />
-      <md-elevated-button
-        class="focus-scan"
-        style=${styleMap(selectionColor)}
-        label="Scan: ${this.scan.id}"
-        @click="${this.focusScan}"
-      ></md-elevated-button>
+      <div style=${styleMap(background)} class="viewport">
+        <md-elevated-button
+          class="focus-scan"
+          style=${styleMap(selectionColor)}
+          label="Scan: ${this.scan.id}"
+          @click="${this.focusScan}"
+        ></md-elevated-button>
+      </div>
     `;
   }
 
   static styles = css`
     :host {
       position: relative;
-      text-align: center;
 
       min-width: 30rem;
-      min-height: 20rem;
-
-      overflow: clip;
-
       display: flex;
+    }
+
+    .viewport {
+      flex: 1;
     }
 
     .focus-scan {

@@ -15,6 +15,7 @@ export type ScanClicked = {
   type: 'SCAN_CLICKED';
   id: ScanId;
 };
+export type FeatureViewId = string;
 
 function decodeFromBinary(str: string): string {
   return decodeURIComponent(
@@ -48,7 +49,7 @@ const machine = createMachine(
         | ScanClicked
         | {
             type: 'FEATURE_SELECT';
-            featureIndex: number;
+            featureViewId: FeatureViewId;
             feature: Feature;
           }
         | {
@@ -56,7 +57,7 @@ const machine = createMachine(
           }
         | {
             type: 'FEATURE_REMOVE';
-            featureIndex: number;
+            featureViewId: FeatureViewId;
           }
         | {
             type: 'FOCUS_SCAN';
@@ -64,15 +65,21 @@ const machine = createMachine(
           },
       context: {} as {
         scanSelectionsPool: ScanSelections.ScanSelectionsPool;
+
+        features: Record<FeatureViewId, Feature>;
+        featureViewCount: number;
+
         plotParameters: { leftBiomarker: Field; bottomBiomarker: Field };
-        features: Array<Feature>;
       },
     },
     predictableActionArguments: true,
 
     context: {
       scanSelectionsPool: ScanSelections.createSelectionPool(),
-      features: [FEATURE_KEYS[0]], // selected features to view
+
+      featureViewCount: 1,
+      features: { '1': FEATURE_KEYS[0] }, // selected features to view
+
       plotParameters: {
         leftBiomarker: fields[0],
         bottomBiomarker: fields[1],
@@ -100,22 +107,26 @@ const machine = createMachine(
         })
       ),
 
-      assignFeature: assign(({ features }, { featureIndex, feature }) => {
+      assignFeature: assign(({ features }, { featureViewId, feature }) => {
         if (!FEATURE_KEYS.includes(feature)) return { features };
         return {
-          features: Object.assign([], features, { [featureIndex]: feature }),
+          features: Object.assign({}, features, { [featureViewId]: feature }),
         };
       }),
 
       addFeature: assign({
-        features: ({ features }) => [...features, FEATURE_KEYS[0]],
+        featureViewCount: ({ featureViewCount }) => featureViewCount + 1,
+        features: ({ features, featureViewCount }) => ({
+          ...features,
+          [featureViewCount + 1]: FEATURE_KEYS[0],
+        }),
       }),
 
       removeFeature: assign({
-        features: ({ features }, { featureIndex }) => [
-          ...features.slice(0, featureIndex),
-          ...features.slice(featureIndex + 1),
-        ],
+        features: ({ features }, { featureViewId }) => {
+          const { [featureViewId]: _, ...keep } = features;
+          return keep;
+        },
       }),
 
       assignParameter: assign(({ plotParameters }, { parameter, value }) => {
