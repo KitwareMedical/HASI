@@ -607,10 +607,6 @@ export class ScanTable extends LitElement {
 
   static styles = [
     css`
-      :host {
-        margin-bottom: 1rem;
-      }
-
       :host > * {
         height: 100%;
       }

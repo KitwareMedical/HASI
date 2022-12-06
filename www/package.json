@@ -18,6 +18,7 @@
     "@lumino/dragdrop": "^1.14.3",
     "@lumino/widgets": "^1.35.0",
     "@material/web": "npm:material-web-hasi@0.1.0-alpha.0",
+    "@shoelace-style/shoelace": "2.0.0-beta.86",
     "lit": "^2.4.0",
     "urlpattern-polyfill": "^6.0.2",
     "xstate": "^4.34.0"
