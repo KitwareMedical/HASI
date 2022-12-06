@@ -535,7 +535,7 @@ export class ScanTable extends LitElement {
   );
 
   scanFocus = connectState(this, (state) =>
-    state.event.type === 'FOCUS_SCAN' ? state.event.id : ''
+    state.event.type === 'FOCUS_SCAN' ? { id: state.event.id } : undefined
   );
 
   resizeHandler = () => {
@@ -601,7 +601,7 @@ export class ScanTable extends LitElement {
   render() {
     const selection = this.scanSelection.value;
     if (selection) this.dataModel.setSelectedScanIds(selection);
-    const focus = this.scanFocus.value;
+    const focus = this.scanFocus.value?.id;
     if (focus) this._grid.scrollToCell(Number(focus), 0);
   }
 
