@@ -21,8 +21,15 @@ export class TopAppBar extends LitElement {
   }
   static styles = css`
     :host {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
+    }
+
+    h1 {
+      font-weight: 400;
+      font-size: 22px;
+      line-height: 28px;
     }
   `;
 

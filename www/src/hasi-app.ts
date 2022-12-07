@@ -17,7 +17,7 @@ import './individual-root.js';
 import './processing-root.js';
 import { PAGES } from './pages.js';
 
-const appTitle = 'Osteoarthritis Biomarker Analysis';
+const APP_TITLE = 'Osteoarthritis Biomarkers' as const;
 
 /**
  * Hasi entry point
@@ -57,7 +57,7 @@ export class HasiApp extends LitElement {
       <nav-menu .opened=${this.isMenuOpen} .routes=${this.routes}></nav-menu>
       <div class="center">
         <top-app-bar
-          title=${appTitle}
+          title=${APP_TITLE}
           .isMenuOpen=${this.isMenuOpen}
           @toggleMenu="${this._toggleMenuHandler}"
         ></top-app-bar>
@@ -71,7 +71,6 @@ export class HasiApp extends LitElement {
       height: 100%;
       width: 100%;
 
-      padding: 10px;
       display: flex;
     }
 

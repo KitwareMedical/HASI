@@ -1,6 +1,6 @@
 import { ScanId } from '../scan.types';
 
-const SELECT_COLORS = ['Aqua ', 'Aquamarine'] as const;
+const SELECT_COLORS = ['#93CEF1', '#E69F00'] as const;
 export type Color = typeof SELECT_COLORS[number];
 export type ScanSelection = { id: ScanId; color: Color };
 export type ScanSelections = Array<ScanSelection>;

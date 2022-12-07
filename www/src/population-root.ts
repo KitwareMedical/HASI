@@ -35,17 +35,16 @@ export class PopulationRoot extends LitElement {
 
   render() {
     return html`
-      <h2 class="title">Population</h2>
       <div class="main-layout">
-        <sl-details summary="Scans" open>
+        <sl-details summary="Scan Table" open>
           <scan-table></scan-table>
         </sl-details>
 
-        <sl-details summary="Biomarkers" open>
+        <sl-details summary="Biomarker Charts" open>
           <plot-params></plot-params>
         </sl-details>
 
-        <sl-details summary="Features" open>
+        <sl-details summary="Feature Views" open>
           <scan-views></scan-views>
         </sl-details>
       </div>
@@ -55,18 +54,16 @@ export class PopulationRoot extends LitElement {
   static styles = css`
     :host {
       height: 100%;
-      display: flex;
-      flex-direction: column;
     }
 
     .main-layout {
-      flex: 1;
+      height: 100%;
       display: flex;
       flex-direction: column;
     }
 
     .main-layout > * {
-      flex: 1;
+      flex: 1 1 20rem;
       display: flex;
       flex-direction: column;
     }
@@ -85,19 +82,22 @@ export class PopulationRoot extends LitElement {
 
     .main-layout > * > * {
       flex: 1;
-      display: flex;
-      flex-direction: column;
     }
 
     sl-details:not([open]) {
       flex: 0;
+      margin: 0 0 2px 0;
     }
 
     sl-details::part(header) {
-      background-color: var(--primarycolor);
-      color: var(--textwhite);
+      background-color: var(--primary-color);
+      color: var(--text-white);
       font-size: 22px;
-      margin: 0.4rem 0;
+      padding: 0.4rem 0.2rem;
+    }
+
+    sl-details::part(summary) {
+      justify-content: center;
     }
   `;
 }

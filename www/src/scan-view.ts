@@ -49,6 +49,7 @@ export class ScanView extends LitElement {
       position: relative;
 
       min-width: 30rem;
+      min-height: 20rem;
       display: flex;
     }
 
@@ -60,6 +61,10 @@ export class ScanView extends LitElement {
       position: absolute;
       top: 0.2rem;
       left: 0.2rem;
+    }
+
+    md-elevated-button {
+      --md-elevated-button-label-text-color: black;
     }
   `;
 }
