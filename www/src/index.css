@@ -16,6 +16,10 @@
 
   --primary-color: #166db7;
   --text-white: white;
+  --text-primary: #49454f;
+
+  --md-sys-color-primary: var(--primary-color);
+  --md-sys-color-surface-variant: white;
 }
 
 html,

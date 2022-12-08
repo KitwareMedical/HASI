@@ -16,4 +16,9 @@ export const PAGES = {
     path: '/processing',
     tag: literal`processing-root`,
   },
+} as const;
+
+export const isOnPath = (path: string): boolean => {
+  // console.log(path);
+  return window.location.pathname.endsWith(path);
 };
