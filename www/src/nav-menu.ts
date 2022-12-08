@@ -32,7 +32,6 @@ export class NavMenu extends LitElement {
               ...values,
             }))
             .map(({ icon, path, title }) => {
-              console.log(isOnPath(path));
               return html`
                 <a href=${this.routes.link(path)}>
                   <md-filled-icon-button-toggle

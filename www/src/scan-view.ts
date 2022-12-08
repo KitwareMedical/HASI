@@ -8,6 +8,8 @@ import { Feature } from './scan.types.js';
 import { ScanSelection } from './state/scan-selections.js';
 import { hasiContext } from './state/hasi.machine.js';
 
+import mesh from './assets/mesh.png';
+
 @customElement('scan-view')
 export class ScanView extends LitElement {
   @property() scan!: ScanSelection;
@@ -26,14 +28,9 @@ export class ScanView extends LitElement {
     const selectionColor = {
       '--md-elevated-button-container-color': this.scan.color,
     };
-    const image = `http://placekitten.com/400/300?image=${Math.floor(
-      Math.random() * 16
-    )}`;
-    const background = {
-      background: `url(${image}) center center`,
-    };
     return html`
-      <div style=${styleMap(background)} class="viewport">
+      <div class="viewport">
+        <img src=${mesh} />
         <md-elevated-button
           class="focus-scan"
           style=${styleMap(selectionColor)}
@@ -48,13 +45,20 @@ export class ScanView extends LitElement {
     :host {
       position: relative;
 
-      min-width: 30rem;
+      min-width: 20rem;
       min-height: 20rem;
       display: flex;
     }
 
     .viewport {
       flex: 1;
+
+      display: flex;
+      justify-content: center;
+    }
+
+    img {
+      object-fit: cover;
     }
 
     .focus-scan {

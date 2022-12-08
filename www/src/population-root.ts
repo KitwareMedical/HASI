@@ -93,7 +93,7 @@ export class PopulationRoot extends LitElement {
       background-color: var(--primary-color);
       color: var(--text-white);
       font-size: 22px;
-      padding: 0.4rem 0.2rem;
+      padding: 0.6rem 0.2rem;
     }
 
     sl-details::part(summary) {
