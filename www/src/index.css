@@ -20,6 +20,8 @@
 
   --md-sys-color-primary: var(--primary-color);
   --md-sys-color-surface-variant: white;
+
+  --md-outlined-autocomplete-text-field-container-height: 36px;
 }
 
 html,

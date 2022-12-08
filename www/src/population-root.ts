@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import '@shoelace-style/shoelace/dist/components/details/details.js';
 import { setDefaultAnimation } from '@shoelace-style/shoelace/dist/utilities/animation-registry.js';
 
-import './plot-params.js';
+import './biomarker-charts.js';
 import './scan-table.js';
 import './scan-views.js';
 
@@ -41,7 +41,7 @@ export class PopulationRoot extends LitElement {
         </sl-details>
 
         <sl-details summary="Biomarker Charts" open>
-          <plot-params></plot-params>
+          <biomarker-charts></biomarker-charts>
         </sl-details>
 
         <sl-details summary="Feature Views" open>

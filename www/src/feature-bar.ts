@@ -18,20 +18,21 @@ export class FeatureBar extends LitElement {
 
   render() {
     return html`
-      <md-outlined-autocomplete
-        label="Select Feature"
-        .value=${FEATURES[this.feature].name}
-      >
-        ${map(
-          Object.values(FEATURES),
-          ({ name, long }) =>
-            html`<md-autocomplete-item
-              headline="${name}"
-              supportingText="${long}"
-            ></md-autocomplete-item>`
-        )}
-      </md-outlined-autocomplete>
-
+      <div>
+        <md-outlined-autocomplete
+          label="Select Feature"
+          .value=${FEATURES[this.feature].name}
+        >
+          ${map(
+            Object.values(FEATURES),
+            ({ name, long }) =>
+              html`<md-autocomplete-item
+                headline="${name}"
+                supportingText="${long}"
+              ></md-autocomplete-item>`
+          )}
+        </md-outlined-autocomplete>
+      </div>
       <md-standard-icon-button @click="${this.clickHandler}" icon="close">
       </md-standard-icon-button>
     `;
@@ -42,6 +43,9 @@ export class FeatureBar extends LitElement {
       position: relative;
       display: flex;
       justify-content: center;
+      align-items: center;
+
+      --md-outlined-autocomplete-text-field-container-height: 36px;
     }
   `;
 }

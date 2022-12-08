@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit';
+import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import '@material/web/autocomplete/outlined-autocomplete.js';
@@ -39,6 +39,15 @@ export class BiomarkerPicker extends LitElement {
       </md-outlined-autocomplete>
     `;
   }
+
+  static styles = css`
+    :host {
+      display: grid;
+      margin: 0.4rem;
+
+      position: relative;
+    }
+  `;
 }
 
 declare global {
