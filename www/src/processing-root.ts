@@ -1,15 +1,14 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { literal } from 'lit/static-html.js';
+
+const SECTIONS = [{ title: 'Scan Table', tag: literal`scan-table` }];
 
 @customElement('processing-root')
 export class ProcessingRoot extends LitElement {
   render() {
-    return html` <h2>Processing</h2> `;
+    return html` <accordion-layout .sections=${SECTIONS}></accordion-layout> `;
   }
-  static styles = css`
-    :host {
-    }
-  `;
 }
 
 declare global {
