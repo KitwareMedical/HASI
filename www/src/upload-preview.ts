@@ -8,7 +8,7 @@ import './scan-view.js';
 export class UploadPreview extends LitElement {
   private sendNextStage = () => {
     this.dispatchEvent(
-      new Event('nextstage', { bubbles: true, composed: true })
+      new Event('next-stage', { bubbles: true, composed: true })
     );
   };
 
@@ -17,8 +17,8 @@ export class UploadPreview extends LitElement {
       <scan-view></scan-view>
       <div>
         <md-filled-button
-          label="Upload"
-          icon="upload"
+          label="Upload and Process"
+          icon="settings"
           @click=${this.sendNextStage}
         ></md-filled-button>
       </div>
@@ -38,7 +38,6 @@ export class UploadPreview extends LitElement {
       width: 100%;
     }
     md-filled-button {
-      width: 14rem;
       margin: 0.4rem;
     }
   `;

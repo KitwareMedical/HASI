@@ -4,8 +4,13 @@ import { html, unsafeStatic } from 'lit/static-html.js';
 
 import './upload-pick.js';
 import './upload-preview.js';
+import './upload-progress.js';
 
-const UPLOAD_STAGES = ['upload-pick', 'upload-preview', 'upload'] as const;
+const UPLOAD_STAGES = [
+  'upload-pick',
+  'upload-preview',
+  'upload-progress',
+] as const;
 type UploadStage = typeof UPLOAD_STAGES[number];
 
 const STAGE_COMPONENTS = UPLOAD_STAGES.map((tag) => unsafeStatic(`${tag}`));
@@ -17,14 +22,16 @@ export class UploadScans extends LitElement {
   private progressStage = (e: CustomEvent) => {
     e.stopPropagation();
     this.uploadStage =
-      UPLOAD_STAGES[UPLOAD_STAGES.indexOf(this.uploadStage) + 1];
+      UPLOAD_STAGES[
+        (UPLOAD_STAGES.indexOf(this.uploadStage) + 1) % UPLOAD_STAGES.length
+      ];
   };
 
   render() {
     const uploadStageTag =
       STAGE_COMPONENTS[UPLOAD_STAGES.indexOf(this.uploadStage)];
     return html`
-      <div @nextstage=${this.progressStage}>
+      <div @next-stage=${this.progressStage}>
         <${uploadStageTag} class="uploadStage"> </${uploadStageTag}>
       </div>
     `;

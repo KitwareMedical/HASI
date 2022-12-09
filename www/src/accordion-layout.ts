@@ -73,12 +73,15 @@ export class AccordionLayout extends LitElement {
       flex: 1;
       display: flex;
       flex-direction: column;
+      border: none;
+      border-radius: 0;
     }
 
     .main-layout > *::part(content) {
       flex: 1;
       display: flex;
       flex-direction: column;
+      padding: 0;
     }
 
     .main-layout > * > * {
@@ -95,10 +98,15 @@ export class AccordionLayout extends LitElement {
       color: var(--text-white);
       font-size: 22px;
       padding: 0.6rem 0.2rem;
+      border-radius: 0;
     }
 
     sl-details::part(summary) {
       justify-content: center;
+    }
+
+    sl-details::part(summary-icon) {
+      margin-right: 0.6rem;
     }
   `;
 }

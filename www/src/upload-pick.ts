@@ -6,7 +6,7 @@ import '@material/web/button/filled-button.js';
 export class UploadPick extends LitElement {
   private sendNextStage = () => {
     this.dispatchEvent(
-      new Event('nextstage', { bubbles: true, composed: true })
+      new Event('next-stage', { bubbles: true, composed: true })
     );
   };
 
@@ -25,14 +25,22 @@ export class UploadPick extends LitElement {
 
   static styles = css`
     :host {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+
+      background: repeating-linear-gradient(
+        45deg,
+        #ffffff,
+        #ffffff 60px,
+        #ebebeb 60px,
+        #ebebeb 120px
+      );
     }
 
     :host > div {
-      flex: 1;
-
       display: flex;
       flex-direction: column;
       justify-content: center;

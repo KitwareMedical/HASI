@@ -7,6 +7,7 @@ import { Router } from '@lit-labs/router';
 if (!globalThis.URLPattern) {
   import('urlpattern-polyfill');
 }
+import '@shoelace-style/shoelace/dist/themes/light.css';
 
 import { createService, hasiContext, saveState } from './state/hasi.machine';
 
