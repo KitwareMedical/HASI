@@ -12,31 +12,34 @@ import mesh from './assets/mesh.png';
 
 @customElement('scan-view')
 export class ScanView extends LitElement {
-  @property() scan!: ScanSelection;
+  @property() scan?: ScanSelection;
   @property() feature!: Feature;
 
   stateService = new ContextConsumer(this, hasiContext, undefined, true);
 
   focusScan() {
-    this.stateService.value?.service.send({
-      type: 'FOCUS_SCAN',
-      id: this.scan.id,
-    });
+    if (this.scan)
+      this.stateService.value?.service.send({
+        type: 'FOCUS_SCAN',
+        id: this.scan.id,
+      });
   }
 
   render() {
     const selectionColor = {
-      '--md-elevated-button-container-color': this.scan.color,
+      '--md-elevated-button-container-color': this.scan?.color,
     };
     return html`
       <div class="viewport">
         <img src=${mesh} />
-        <md-elevated-button
-          class="focus-scan"
-          style=${styleMap(selectionColor)}
-          label="Scan: ${this.scan.id}"
-          @click="${this.focusScan}"
-        ></md-elevated-button>
+        ${this.scan
+          ? html` <md-elevated-button
+              class="focus-scan"
+              style=${styleMap(selectionColor)}
+              label="Scan: ${this.scan.id}"
+              @click="${this.focusScan}"
+            ></md-elevated-button>`
+          : undefined}
       </div>
     `;
   }
