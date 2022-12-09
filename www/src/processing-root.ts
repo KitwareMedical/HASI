@@ -2,7 +2,14 @@ import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { literal } from 'lit/static-html.js';
 
-const SECTIONS = [{ title: 'Scan Table', tag: literal`scan-table` }];
+import './accordion-layout.js';
+import './scan-table.js';
+import './upload-scans.js';
+
+const SECTIONS = [
+  { title: 'Scan Table', tag: literal`scan-table` },
+  { title: 'Upload Scans', tag: literal`upload-scans` },
+];
 
 @customElement('processing-root')
 export class ProcessingRoot extends LitElement {
