@@ -1,33 +1,48 @@
-import { html } from "lit/static-html.js";
-import { LitElement, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { Router } from "@lit-labs/router";
-import "@material/web/navigationdrawer/navigation-drawer.js";
-import "@material/web/button/filled-link-button.js";
-import "@material/web/list/list.js";
-import "@material/web/list/list-item.js";
+import { ContextProvider } from '@lit-labs/context';
+import { html } from 'lit/static-html.js';
+import { LitElement, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { Router } from '@lit-labs/router';
+// @ts-ignore: Property 'UrlPattern' does not exist
+if (!globalThis.URLPattern) {
+  import('urlpattern-polyfill');
+}
+import '@shoelace-style/shoelace/dist/themes/light.css';
 
-import "./top-app-bar.js";
-import "./nav-menu.js";
-import "./population-root.js";
-import "./individual-root.js";
-import "./processing-root.js";
-import { PAGES } from "./pages.js";
+import { createService, hasiContext, saveState } from './state/hasi.machine';
 
-const appTitle = "Osteoarthritis Biomarker Analysis";
+import './top-app-bar.js';
+import './nav-menu.js';
+import './population-root.js';
+import './individual-root.js';
+import './processing-root.js';
+import { PAGES } from './pages.js';
+
+const APP_TITLE = 'Osteoarthritis Biomarkers' as const;
 
 /**
  * Hasi entry point
  *
  */
-@customElement("hasi-app")
+@customElement('hasi-app')
 export class HasiApp extends LitElement {
-  private _routes = new Router(
+  // @ts-ignore
+  private provider = new ContextProvider(this, hasiContext, {
+    service: createService(),
+  });
+
+  private routes = new Router(
     this,
     Object.values(PAGES).map(({ path, tag }) => {
       return {
         path,
-        render: () => html`<${tag}></${tag}>`,
+        render: () => {
+          return html`<${tag}></${tag}>`;
+        },
+        enter: () => {
+          saveState(this.provider.value.service.getSnapshot());
+          return true;
+        },
       };
     })
   );
@@ -40,23 +55,23 @@ export class HasiApp extends LitElement {
 
   render() {
     return html`
-      <nav-menu .opened=${this.isMenuOpen}></nav-menu>
+      <nav-menu .opened=${this.isMenuOpen} .routes=${this.routes}></nav-menu>
       <div class="center">
         <top-app-bar
-          title=${appTitle}
+          title=${APP_TITLE}
           .isMenuOpen=${this.isMenuOpen}
           @toggleMenu="${this._toggleMenuHandler}"
         ></top-app-bar>
-        <div class="main-content">${this._routes.outlet()}</div>
+        <div class="main-content">${this.routes.outlet()}</div>
       </div>
     `;
   }
+
   static styles = css`
     :host {
       height: 100%;
       width: 100%;
 
-      padding: 10px;
       display: flex;
     }
 
@@ -75,6 +90,6 @@ export class HasiApp extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "hasi-app": HasiApp;
+    'hasi-app': HasiApp;
   }
 }

@@ -1,39 +1,26 @@
-import { LitElement, css, html } from "lit";
-import { customElement } from "lit/decorators.js";
+import { LitElement, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { literal } from 'lit/static-html.js';
 
-@customElement("population-root")
+import './biomarker-charts.js';
+import './scan-table.js';
+import './scan-views.js';
+
+const SECTIONS = [
+  { title: 'Scan Table', tag: literal`scan-table` },
+  { title: 'Biomarker Charts', tag: literal`biomarker-charts` },
+  { title: 'Features', tag: literal`scan-views` },
+];
+
+@customElement('population-root')
 export class PopulationRoot extends LitElement {
   render() {
-    return html`
-      <h2>Population</h2>
-      <div class="main-layout">
-        <div>Charts and Biomarkers</div>
-        <div>Image Viewer</div>
-      </div>
-    `;
+    return html` <accordion-layout .sections=${SECTIONS}></accordion-layout> `;
   }
-
-  static styles = css`
-    :host {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .main-layout {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .main-layout > div {
-      flex: 1;
-    }
-  `;
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    "population-root": PopulationRoot;
+    'population-root': PopulationRoot;
   }
 }
