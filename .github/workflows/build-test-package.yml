@@ -5,8 +5,12 @@ on: [push,pull_request]
 jobs:
   cxx-build-workflow:
     uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-cxx.yml@36e33ec40332bb8fd85bfcd3ee899f82aa108e79
+    with:
+      itk-module-deps: 'BoneEnhancement@e6935aa760c3fa4e247ca0f4924a4fe3e420bf91:IOScanco@10a73c1ab2de044c4dd73608f91cf52012aff5e4'
 
   python-build-workflow:
     uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml@36e33ec40332bb8fd85bfcd3ee899f82aa108e79
+    with:
+      itk-module-deps: 'InsightSoftwareConsortium/ITKBoneEnhancement@e6935aa760c3fa4e247ca0f4924a4fe3e420bf91'
     secrets:
       pypi_password: ${{ secrets.pypi_password }}
