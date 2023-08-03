@@ -27,7 +27,7 @@
     "@xstate/cli": "^0.3.3",
     "prettier": "^2.8.0",
     "typescript": "^4.6.4",
-    "vite": "^3.2.3"
+    "vite": "^3.2.7"
   },
   "prettier": {
     "tabWidth": 2,
