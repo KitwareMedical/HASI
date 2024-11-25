@@ -1,15 +1,23 @@
 name: Build, test, package
 
-on: [push,pull_request]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   cxx-build-workflow:
-    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-cxx.yml@36e33ec40332bb8fd85bfcd3ee899f82aa108e79
+    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-cxx.yml@v5.4.0
     with:
       itk-module-deps: 'BoneEnhancement@e6935aa760c3fa4e247ca0f4924a4fe3e420bf91:IOScanco@10a73c1ab2de044c4dd73608f91cf52012aff5e4'
 
   python-build-workflow:
-    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml@36e33ec40332bb8fd85bfcd3ee899f82aa108e79
+    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml@v5.4.0
     with:
       itk-module-deps: 'InsightSoftwareConsortium/ITKBoneEnhancement@e6935aa760c3fa4e247ca0f4924a4fe3e420bf91'
     secrets:
