@@ -57,7 +57,7 @@ public:
   using ConstPointer = SmartPointer<const Self>;
 
   /** Run-time type information. */
-  itkTypeMacro(LandmarkAtlasSegmentationFilter, ImageToImageFilter);
+  itkOverrideGetNameOfClassMacro(LandmarkAtlasSegmentationFilter);
 
   /** Standard New macro. */
   itkNewMacro(Self);
