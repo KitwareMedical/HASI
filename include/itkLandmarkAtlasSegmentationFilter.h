@@ -41,7 +41,7 @@ template <typename TInputImage, typename TOutputImage>
 class LandmarkAtlasSegmentationFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
-  ITK_DISALLOW_COPY_AND_ASSIGN(LandmarkAtlasSegmentationFilter);
+  ITK_DISALLOW_COPY_AND_MOVE(LandmarkAtlasSegmentationFilter);
 
   static constexpr unsigned Dimension = TInputImage::ImageDimension;
 

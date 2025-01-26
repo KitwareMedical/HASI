@@ -42,7 +42,7 @@ template <typename TInputImage, typename TOutputImage>
 class SegmentBonesInMicroCTFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
-  ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBonesInMicroCTFilter);
+  ITK_DISALLOW_COPY_AND_MOVE(SegmentBonesInMicroCTFilter);
 
   using InputImageType = TInputImage;
   using OutputImageType = TOutputImage;
