@@ -56,7 +56,7 @@ public:
   using ConstPointer = SmartPointer<const Self>;
 
   /** Run-time type information. */
-  itkTypeMacro(SegmentBonesInMicroCTFilter, ImageToImageFilter);
+  itkOverrideGetNameOfClassMacro(SegmentBonesInMicroCTFilter);
 
   /** Standard New macro. */
   itkNewMacro(Self);
