@@ -139,7 +139,7 @@ private:
   LandmarksType m_AtlasLandmarks;
   LandmarksType m_InputLandmarks;
 
-  typename RigidTransformType::Pointer     m_LandmarksTransform = nullptr;
+  typename RigidTransformType::Pointer m_LandmarksTransform = nullptr;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,

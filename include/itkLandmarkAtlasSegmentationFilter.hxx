@@ -67,7 +67,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
   using InterpolatorType = itk::NearestNeighborInterpolateImageFunction<OutputImageType, double>;
-  typename InterpolatorType::Pointer interpolator = InterpolatorType::New();  
+  typename InterpolatorType::Pointer interpolator = InterpolatorType::New();
 
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   typename ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();
