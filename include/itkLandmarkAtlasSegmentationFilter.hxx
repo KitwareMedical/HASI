@@ -38,10 +38,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 {
   this->AllocateOutputs();
 
-  OutputImageType *      output = this->GetOutput();
+  // OutputImageType *      output = this->GetOutput();
   const InputImageType * input = this->GetInput();
-  const RegionType &     outputRegion = output->GetRequestedRegion();
-  RegionType             inputRegion = RegionType(outputRegion.GetSize());
+  // const RegionType &     outputRegion = output->GetRequestedRegion();
+  // RegionType             inputRegion = RegionType(outputRegion.GetSize());
 
 
   m_LandmarksTransform = RigidTransformType::New();
