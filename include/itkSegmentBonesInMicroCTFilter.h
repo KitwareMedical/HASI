@@ -42,7 +42,7 @@ template <typename TInputImage, typename TOutputImage>
 class SegmentBonesInMicroCTFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
-  ITK_DISALLOW_COPY_AND_ASSIGN(SegmentBonesInMicroCTFilter);
+  ITK_DISALLOW_COPY_AND_MOVE(SegmentBonesInMicroCTFilter);
 
   using InputImageType = TInputImage;
   using OutputImageType = TOutputImage;
@@ -56,7 +56,7 @@ public:
   using ConstPointer = SmartPointer<const Self>;
 
   /** Run-time type information. */
-  itkTypeMacro(SegmentBonesInMicroCTFilter, ImageToImageFilter);
+  itkOverrideGetNameOfClassMacro(SegmentBonesInMicroCTFilter);
 
   /** Standard New macro. */
   itkNewMacro(Self);

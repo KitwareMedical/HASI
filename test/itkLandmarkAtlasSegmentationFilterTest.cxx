@@ -63,8 +63,8 @@ readSlicerFiducials(std::string fileName)
   std::ifstream pointsFile(fileName.c_str());
   std::string   line;
   // ignore first 3 lines (comments of fiducials savefile)
-  std::getline(pointsFile, line); //# Markups fiducial file version = 4.10
-  std::getline(pointsFile, line); //# CoordinateSystem = 0
+  std::getline(pointsFile, line); // # Markups fiducial file version = 4.10
+  std::getline(pointsFile, line); // # CoordinateSystem = 0
   line = line.substr(line.length() - 3);
   bool ras = false;
   if (line == "RAS" || line[line.length() - 1] == '0')
@@ -78,7 +78,7 @@ readSlicerFiducials(std::string fileName)
   {
     throw itk::ExceptionObject(__FILE__, __LINE__, "Unrecognized coordinate system", __FUNCTION__);
   }
-  std::getline(pointsFile, line); //# columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
+  std::getline(pointsFile, line); // # columns = id,x,y,z,ow,ox,oy,oz,vis,sel,lock,label,desc,associatedNodeID
 
   std::vector<PointType> points;
   std::getline(pointsFile, line);

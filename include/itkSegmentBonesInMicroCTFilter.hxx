@@ -285,7 +285,7 @@ SegmentBonesInMicroCTFilter<TInputImage, TOutputImage>::GenerateData()
 
 
   // per-bone processing
-  for (unsigned bone = 1; bone <= numBones; bone++)
+  for (typename TOutputImage::PixelType bone = 1; bone <= numBones; bone++)
   {
     float boneProgress = 0.3f / numBones;
     float beginProgress = 0.7 + boneProgress * (bone - 1);

@@ -38,10 +38,10 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
 {
   this->AllocateOutputs();
 
-  OutputImageType *      output = this->GetOutput();
+  // OutputImageType *      output = this->GetOutput();
   const InputImageType * input = this->GetInput();
-  const RegionType &     outputRegion = output->GetRequestedRegion();
-  RegionType             inputRegion = RegionType(outputRegion.GetSize());
+  // const RegionType &     outputRegion = output->GetRequestedRegion();
+  // RegionType             inputRegion = RegionType(outputRegion.GetSize());
 
 
   m_LandmarksTransform = RigidTransformType::New();
@@ -67,7 +67,7 @@ LandmarkAtlasSegmentationFilter<TInputImage, TOutputImage>::GenerateData()
   m_LandmarksTransform->SetTranslation(m_AtlasLandmarks.front() - m_InputLandmarks.front());
 
   using InterpolatorType = itk::NearestNeighborInterpolateImageFunction<OutputImageType, double>;
-  typename InterpolatorType::Pointer interpolator = InterpolatorType::New();  
+  typename InterpolatorType::Pointer interpolator = InterpolatorType::New();
 
   using ResampleFilterType = itk::ResampleImageFilter<OutputImageType, OutputImageType, double>;
   typename ResampleFilterType::Pointer resampleFilter = ResampleFilterType::New();

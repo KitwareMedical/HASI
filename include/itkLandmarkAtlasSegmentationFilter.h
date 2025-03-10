@@ -41,7 +41,7 @@ template <typename TInputImage, typename TOutputImage>
 class LandmarkAtlasSegmentationFilter : public ImageToImageFilter<TInputImage, TOutputImage>
 {
 public:
-  ITK_DISALLOW_COPY_AND_ASSIGN(LandmarkAtlasSegmentationFilter);
+  ITK_DISALLOW_COPY_AND_MOVE(LandmarkAtlasSegmentationFilter);
 
   static constexpr unsigned Dimension = TInputImage::ImageDimension;
 
@@ -57,7 +57,7 @@ public:
   using ConstPointer = SmartPointer<const Self>;
 
   /** Run-time type information. */
-  itkTypeMacro(LandmarkAtlasSegmentationFilter, ImageToImageFilter);
+  itkOverrideGetNameOfClassMacro(LandmarkAtlasSegmentationFilter);
 
   /** Standard New macro. */
   itkNewMacro(Self);
@@ -139,7 +139,7 @@ private:
   LandmarksType m_AtlasLandmarks;
   LandmarksType m_InputLandmarks;
 
-  typename RigidTransformType::Pointer     m_LandmarksTransform = nullptr;
+  typename RigidTransformType::Pointer m_LandmarksTransform = nullptr;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkConceptMacro(InputAndOutputMustHaveSameDimension,
